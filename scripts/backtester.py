@@ -13,6 +13,8 @@ def backtest_strategy(data, signal_column='Signal'):
         elif signal == 'Sell' and position > 0: # Closing a position
             capital += position * price # Sell all shares
             position = 0 # Reset position to zero after selling shares
+        elif signal == 'Hold': # Holding the position
+            pass
         portfolio_value.append(capital + position * price) # final value of the portfolio
     data = data.iloc[1:].copy()
     data['Portfolio Value'] = portfolio_value
