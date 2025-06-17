@@ -8,4 +8,4 @@ def train_arima_model(data, order=(5, 1, 0),steps = 30):
     model_fit = model.fit()
     forecast = model_fit.forecast(steps=steps)
     mse = mean_squared_error(data['Close'][-steps:], forecast)
-    return model_fit, forecast, mse
+    return model_fit, forecast, mse 
