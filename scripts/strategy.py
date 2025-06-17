@@ -8,4 +8,4 @@ def generate_signals(forecast, actual_prices, threshold=0.02):
             signals.append('Sell')
         else:
             signals.append('Hold')
-      return signals
+        return signals
