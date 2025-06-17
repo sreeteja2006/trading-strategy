@@ -1,6 +1,7 @@
 import pandas as pd
 
-def backtest_strategy(data, signal_column='Signal'):
+
+def simple_backtest(data, signal_column='Signal'):
     capital = 10000  # Starting capital
     position = 0  # Current position (number of shares)
     portfolio_value = []  # To track portfolio value over time
@@ -18,4 +19,7 @@ def backtest_strategy(data, signal_column='Signal'):
         portfolio_value.append(capital + position * price) # final value of the portfolio
     data = data.iloc[1:].copy()
     data['Portfolio Value'] = portfolio_value
+    # Reset index and add a 'Date' column if not present
+    if 'Date' not in data.columns:
+        data = data.reset_index().rename(columns={'index': 'Date'})
     return data[['Date', 'Close', 'Portfolio Value']]

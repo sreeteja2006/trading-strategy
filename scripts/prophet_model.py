@@ -5,9 +5,12 @@ def train_prophet_model(data, steps=30):
     df_prophet = data.reset_index() # converts the index to a column
     # Ensure the date column is named 'ds' and is a Series
     if 'Date' in df_prophet.columns:
-        df_prophet = df_prophet.rename(columns={'Date': 'ds', 'Close': 'y'})
+        # Use 'Adj Close' if available, else 'Close'
+        price_col = 'Adj Close' if 'Adj Close' in df_prophet.columns else 'Close'
+        df_prophet = df_prophet.rename(columns={'Date': 'ds', price_col: 'y'})
     elif 'index' in df_prophet.columns:
-        df_prophet = df_prophet.rename(columns={'index': 'ds', 'Close': 'y'})
+        price_col = 'Adj Close' if 'Adj Close' in df_prophet.columns else 'Close'
+        df_prophet = df_prophet.rename(columns={'index': 'ds', price_col: 'y'})
     else:
         raise ValueError("No date column found in data for Prophet.")
     df_prophet = df_prophet[['ds', 'y']]
@@ -18,4 +21,4 @@ def train_prophet_model(data, steps=30):
     future = model.make_future_dataframe(periods=steps)
     forecast = model.predict(future)
     forecast = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
-    return forecast
+    return forecast, model
