@@ -112,12 +112,12 @@ def plot_technical_indicators(data):
     plt.show()
 
 def main(stock_name, start, end):
-    # Step 1: Download historical stock prices
+    # Downloading historical stock prices
     stock_data = extract_data.extract_data(stock_name, start, end)
     stock_data = preprocess_data(stock_data)
     plot_technical_indicators(stock_data)
 
-    # Step 2: Forecast future prices using Prophet and ARIMA
+    # Forecasting future prices using Prophet and ARIMA
     future_prices_prophet, _ = prophet_model.train_prophet_model(stock_data, steps=7)
     last_dates = stock_data.index[-7:]
     forecast_on_real_dates_prophet = future_prices_prophet[future_prices_prophet['ds'].isin(last_dates)]
