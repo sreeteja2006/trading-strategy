@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  trading-app:
+    build: .
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped
+    ports:
+      - "8501:8501"  # If adding Streamlit dashboard
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
