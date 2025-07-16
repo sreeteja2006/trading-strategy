@@ -5,6 +5,8 @@ import arima_model
 import lstm_model
 import rf_model
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Change from 'TkAgg' to 'Agg' for non-interactive backend
 import matplotlib.pyplot as plt
 from strategy import generate_signals
 import argparse
@@ -34,7 +36,8 @@ def plot_forecast_vs_actual(actual_prices, predicted_prices, arima_prices=None, 
     plt.ylabel('Price')
     plt.legend()
     plt.grid()
-    plt.show()
+    plt.savefig('forecast_vs_actual.png')
+    plt.close()
 
 def plot_buy_sell_signals(stock_data):
     plt.figure(figsize=(10, 5))
@@ -51,7 +54,8 @@ def plot_buy_sell_signals(stock_data):
     plt.ylabel('Price')
     plt.legend()
     plt.grid()
-    plt.show()
+    plt.savefig('buy_sell_signals.png')
+    plt.close()
 
 def plot_portfolio_value(result):
     plt.figure(figsize=(10, 5))
@@ -61,26 +65,9 @@ def plot_portfolio_value(result):
     plt.ylabel('Money')
     plt.legend()
     plt.grid()
-    plt.show()
-def forecasted_7days(stock_data, future_prices, steps=7):
-    last_date = stock_data.index[-1]
-    future_only = future_prices[future_prices['ds'] > last_date].head(steps)
-    if not future_only.empty:
-        print(f'Future forecasted prices (next {steps} days) with timestamps:')
-        print(future_only[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].to_string(index=False))
-        plt.figure(figsize=(10, 5))
-        plt.plot(future_only['ds'], future_only['yhat'], label='Forecasted Future Price', color='orange')
-        plt.fill_between(future_only['ds'], future_only['yhat_lower'], future_only['yhat_upper'], color='orange', alpha=0.2, label='Confidence Interval')
-        plt.title(f'Forecasted Future Prices (Next {steps} Days)')
-        plt.xlabel('Date & Time')
-        plt.ylabel('Forecasted Price')
-        plt.xticks(rotation=45)
-        plt.legend()
-        plt.grid()
-        plt.tight_layout()
-        plt.show()
-    else:
-        print('No future forecasted prices available (all forecast dates are within the historical data range).')
+    plt.savefig('portfolio_value.png')
+    plt.close()
+
 def plot_technical_indicators(data):
     plt.figure(figsize=(14, 8))
     plt.subplot(3, 1, 1)
@@ -109,7 +96,29 @@ def plot_technical_indicators(data):
     plt.grid()
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig('technical_indicators.png')
+    plt.close()
+
+def forecasted_7days(stock_data, future_prices, steps=7):
+    last_date = stock_data.index[-1]
+    future_only = future_prices[future_prices['ds'] > last_date].head(steps)
+    if not future_only.empty:
+        print(f'Future forecasted prices (next {steps} days) with timestamps:')
+        print(future_only[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].to_string(index=False))
+        plt.figure(figsize=(10, 5))
+        plt.plot(future_only['ds'], future_only['yhat'], label='Forecasted Future Price', color='orange')
+        plt.fill_between(future_only['ds'], future_only['yhat_lower'], future_only['yhat_upper'], color='orange', alpha=0.2, label='Confidence Interval')
+        plt.title(f'Forecasted Future Prices (Next {steps} Days)')
+        plt.xlabel('Date & Time')
+        plt.ylabel('Forecasted Price')
+        plt.xticks(rotation=45)
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig('forecast_7days.png')
+        plt.close()
+    else:
+        print('No future forecasted prices available (all forecast dates are within the historical data range).')
 
 def main(stock_name, start, end):
     # Downloading historical stock prices
@@ -117,31 +126,38 @@ def main(stock_name, start, end):
     stock_data = preprocess_data(stock_data)
     plot_technical_indicators(stock_data)
 
-    # Forecasting future prices using Prophet and ARIMA
-    future_prices_prophet, _ = prophet_model.train_prophet_model(stock_data, steps=7)
+    # Get target dates for prediction
     last_dates = stock_data.index[-7:]
+    
+    # Get predictions from each model
+    future_prices_prophet, _ = prophet_model.train_prophet_model(stock_data, steps=7)
     forecast_on_real_dates_prophet = future_prices_prophet[future_prices_prophet['ds'].isin(last_dates)]
-    predicted_prices_prophet = forecast_on_real_dates_prophet['yhat'].reset_index(drop=True)
-
-    # ARIMA
+    
     _, future_prices_arima = arima_model.train_arima_model(stock_data, steps=7)
-    predicted_prices_arima = pd.Series(future_prices_arima.values, index=last_dates)
-
-    # LSTM
+    
     predicted_prices_lstm = lstm_model.train_lstm_model(stock_data, steps=7)
-    predicted_prices_lstm = predicted_prices_lstm.loc[last_dates]
-
-    # Random Forest
-    predicted_prices_rf = rf_model.train_rf_model(stock_data, steps=7)
-    predicted_prices_rf = predicted_prices_rf.loc[last_dates]
-
-    # Ensemble (average all models)
-    ensemble_pred = (
-        predicted_prices_prophet +
-        predicted_prices_arima +
-        predicted_prices_lstm +
-        predicted_prices_rf
-    ) / 4
+    predicted_prices_rf = rf_model.train_rf_model(stock_data, steps=7, target_dates=last_dates)
+    
+    # Convert predictions to numeric Series with datetime index
+    predicted_prices_prophet = pd.Series(
+        forecast_on_real_dates_prophet['yhat'].values,
+        index=last_dates,
+        dtype=float
+    )
+    
+    predicted_prices_arima = pd.Series(
+        future_prices_arima.values,
+        index=last_dates,
+        dtype=float
+    )
+    
+    # Ensure all predictions are numeric and aligned
+    ensemble_pred = pd.DataFrame({
+        'prophet': predicted_prices_prophet,
+        'arima': predicted_prices_arima,
+        'lstm': predicted_prices_lstm,
+        'rf': predicted_prices_rf
+    }).mean(axis=1)
 
     actual_prices = stock_data.loc[last_dates, 'Close'].reset_index(drop=True)
 
@@ -157,6 +173,28 @@ def main(stock_name, start, end):
     plot_portfolio_value(result)
     forecasted_7days(stock_data, future_prices_prophet, steps=7)
     plot_technical_indicators(stock_data)
+
+    # Run backtest with costs
+    result, transactions = backtester.simple_backtest_with_costs(
+        stock_data, 
+        signal_column='Signal',
+        commission_pct=0.001,  # 0.1% commission
+        slippage_pct=0.001    # 0.1% slippage
+    )
+    
+    # Generate report
+    report = Report(stock_data, ensemble_pred, transactions, metrics)
+    
+    # Save HTML report
+    with open('report.html', 'w') as f:
+        f.write(report.generate_html())
+    
+    # Optional: Send notifications
+    if os.getenv('TELEGRAM_TOKEN'):
+        report.send_telegram(
+            os.getenv('TELEGRAM_TOKEN'),
+            os.getenv('TELEGRAM_CHAT_ID')
+        )
 
 if __name__ == "__main__":
     args = parse_args()
