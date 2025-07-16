@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from strategy import generate_signals
 import argparse
 import logging
+import preprocessing
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -80,9 +81,41 @@ def forecasted_7days(stock_data, future_prices, steps=7):
         plt.show()
     else:
         print('No future forecasted prices available (all forecast dates are within the historical data range).')
+def plot_technical_indicators(data):
+    plt.figure(figsize=(14, 8))
+    plt.subplot(3, 1, 1)
+    plt.plot(data['Close'], label='Close')
+    plt.plot(data['EMA_20'], label='EMA 20')
+    plt.plot(data['BB_Upper'], label='BB Upper', linestyle='--', color='grey')
+    plt.plot(data['BB_Lower'], label='BB Lower', linestyle='--', color='grey')
+    plt.fill_between(data.index, data['BB_Lower'], data['BB_Upper'], color='lightgrey', alpha=0.3)
+    plt.title('Price, EMA, Bollinger Bands')
+    plt.legend()
+    plt.grid()
+
+    plt.subplot(3, 1, 2)
+    plt.plot(data['RSI_14'], label='RSI 14', color='purple')
+    plt.axhline(70, color='red', linestyle='--')
+    plt.axhline(30, color='green', linestyle='--')
+    plt.title('RSI')
+    plt.legend()
+    plt.grid()
+
+    plt.subplot(3, 1, 3)
+    plt.plot(data['MACD'], label='MACD', color='blue')
+    plt.plot(data['MACD_Signal'], label='MACD Signal', color='orange')
+    plt.title('MACD')
+    plt.legend()
+    plt.grid()
+
+    plt.tight_layout()
+    plt.show()
+
 def main(stock_name, start, end):
     # Step 1: Download historical stock prices
     stock_data = extract_data.extract_data(stock_name, start, end)
+    stock_data = preprocess_data(stock_data)
+    plot_technical_indicators(stock_data)
 
     # Step 2: Forecast future prices using Prophet and ARIMA
     future_prices_prophet, _ = prophet_model.train_prophet_model(stock_data, steps=7)
@@ -130,6 +163,7 @@ def main(stock_name, start, end):
     plot_buy_sell_signals(stock_data)
     plot_portfolio_value(result)
     forecasted_7days(stock_data, future_prices_prophet, steps=7)
+    plot_technical_indicators(stock_data)
 
 if __name__ == "__main__":
     args = parse_args()
