@@ -2,12 +2,13 @@ import extract_data
 import backtester
 import prophet_model
 import arima_model
+import lstm_model
+import rf_model
 import pandas as pd
 import matplotlib.pyplot as plt
 from strategy import generate_signals
 import argparse
 import logging
-
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -18,10 +19,15 @@ def parse_args():
     parser.add_argument("--start", type=str, default="2023-01-01", help="Start date in YYYY-MM-DD format")
     parser.add_argument("--end", type=str, default="2024-12-31", help="End date in YYYY-MM-DD format")
     return parser.parse_args()
-def plot_forecast_vs_actual(actual_prices, predicted_prices):
+
+def plot_forecast_vs_actual(actual_prices, predicted_prices, arima_prices=None, ensemble_prices=None):
     plt.figure(figsize=(10, 5))
     plt.plot(actual_prices.index, actual_prices, label='Real Price')
-    plt.plot(predicted_prices.index, predicted_prices, label='Forecast')
+    plt.plot(predicted_prices.index, predicted_prices, label='Prophet Forecast')
+    if arima_prices is not None:
+        plt.plot(arima_prices.index, arima_prices, label='ARIMA Forecast')
+    if ensemble_prices is not None:
+        plt.plot(ensemble_prices.index, ensemble_prices, label='Ensemble Forecast', linestyle='--')
     plt.title('Forecast vs Real Price')
     plt.xlabel('Days')
     plt.ylabel('Price')
@@ -75,52 +81,55 @@ def forecasted_7days(stock_data, future_prices, steps=7):
     else:
         print('No future forecasted prices available (all forecast dates are within the historical data range).')
 def main(stock_name, start, end):
-    # Step 1: Pick stock and time period
-    stock_name = 'GRANULES.NS'
-    start = '2024-06-01'
-    end = '2025-06-01'
-
-    # Step 2: Download historical stock prices
+    # Step 1: Download historical stock prices
     stock_data = extract_data.extract_data(stock_name, start, end)
 
-    # Step 3: Forecast future prices using Prophet model (steps=7 for one week)
-    future_prices, model = prophet_model.train_prophet_model(stock_data, steps=7)
+    # Step 2: Forecast future prices using Prophet and ARIMA
+    future_prices_prophet, _ = prophet_model.train_prophet_model(stock_data, steps=7)
+    last_dates = stock_data.index[-7:]
+    forecast_on_real_dates_prophet = future_prices_prophet[future_prices_prophet['ds'].isin(last_dates)]
+    predicted_prices_prophet = forecast_on_real_dates_prophet['yhat'].reset_index(drop=True)
 
-    # Step 4: Align forecast and real prices by date
-    last_dates = stock_data.index[-30:]
-    forecast_on_real_dates = future_prices[future_prices['ds'].isin(last_dates)]
+    # ARIMA
+    _, future_prices_arima = arima_model.train_arima_model(stock_data, steps=7)
+    predicted_prices_arima = pd.Series(future_prices_arima.values, index=last_dates)
+
+    # LSTM
+    predicted_prices_lstm = lstm_model.train_lstm_model(stock_data, steps=7)
+    predicted_prices_lstm = predicted_prices_lstm.loc[last_dates]
+
+    # Random Forest
+    predicted_prices_rf = rf_model.train_rf_model(stock_data, steps=7)
+    predicted_prices_rf = predicted_prices_rf.loc[last_dates]
+
+    # Ensemble (average all models)
+    ensemble_pred = (
+        predicted_prices_prophet +
+        predicted_prices_arima +
+        predicted_prices_lstm +
+        predicted_prices_rf
+    ) / 4
+
     actual_prices = stock_data.loc[last_dates, 'Close'].reset_index(drop=True)
-    predicted_prices = forecast_on_real_dates['yhat'].reset_index(drop=True)
 
-    logging.info('Forecast dates:', forecast_on_real_dates['ds'].tolist())
-    logging.info('Actual dates:', last_dates.tolist())
-
-    # Step 5: Generate trading signals
-    signals = generate_signals(predicted_prices, actual_prices, threshold=0.02)
-    logging.info('Signals generated:', signals)
-
-    # Step 6: Add signals to the last `days` rows of the stock_data
+    signals = generate_signals(ensemble_pred, actual_prices, threshold=0.02)
     stock_data = stock_data.copy()
     stock_data['Signal'] = 'Hold'
     if len(signals) == len(last_dates) and len(stock_data) >= len(last_dates):
         stock_data.iloc[-len(last_dates):, stock_data.columns.get_loc('Signal')] = signals
-    logging.info('Signal counts after assignment:')
-    logging.info(stock_data['Signal'].value_counts())
 
-    # Step 7: Backtest the strategy
     result = backtester.simple_backtest(stock_data, signal_column='Signal')
-
-    # Step 8: Save backtest result to CSV
     result.to_csv('backtest_results.csv', index=False)
 
-    logging.info('Backtest results saved to backtest_results.csv')
-    # Step 9: Plot results
-    plot_forecast_vs_actual(actual_prices, predicted_prices)
+    plot_forecast_vs_actual(
+        actual_prices,
+        predicted_prices_prophet,
+        predicted_prices_arima,
+        ensemble_pred
+    )
     plot_buy_sell_signals(stock_data)
     plot_portfolio_value(result)
-    forecasted_7days(stock_data, future_prices, steps=7)
-
-
+    forecasted_7days(stock_data, future_prices_prophet, steps=7)
 
 if __name__ == "__main__":
     args = parse_args()
