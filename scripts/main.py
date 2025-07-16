@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from strategy import generate_signals
 import argparse
 import logging
-import preprocessing
+from preprocessing import preprocess_data
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -151,16 +151,9 @@ def main(stock_name, start, end):
     if len(signals) == len(last_dates) and len(stock_data) >= len(last_dates):
         stock_data.iloc[-len(last_dates):, stock_data.columns.get_loc('Signal')] = signals
 
-    result = backtester.simple_backtest(stock_data, signal_column='Signal')
-    result.to_csv('backtest_results.csv', index=False)
-
-    plot_forecast_vs_actual(
-        actual_prices,
-        predicted_prices_prophet,
-        predicted_prices_arima,
-        ensemble_pred
-    )
-    plot_buy_sell_signals(stock_data)
+    result = backtester.simple_backtest_with_risk(stock_data, signal_column='Signal')
+    metrics = backtester.risk_metrics(result)
+    print("Risk Metrics:", metrics)
     plot_portfolio_value(result)
     forecasted_7days(stock_data, future_prices_prophet, steps=7)
     plot_technical_indicators(stock_data)
