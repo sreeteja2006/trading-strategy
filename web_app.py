@@ -162,36 +162,49 @@ def get_stock_data(symbol):
     try:
         print(f"Fetching real data for symbol: {symbol}")
         
-        # Fix for Apple Inc. - ensure we use the correct ticker symbol
-        if "Apple Inc." in symbol and not symbol.endswith(".NS"):
-            symbol = "AAPL"
+        # Remove any exchange suffixes for proper symbol resolution
+        clean_symbol = symbol.split('.')[0]
         
-        # Use the symbol as-is since it's already properly formatted from the frontend
-        ticker = yf.Ticker(symbol)
+        # Get the ticker object
+        ticker = yf.Ticker(clean_symbol)
         
-        # Try different periods if 30d doesn't work - use longer periods for more reliable data
+        # Try different periods if 30d doesn't work
         periods_to_try = ["1y", "6mo", "3mo", "1mo", "5d"]
         data = None
         
         for period in periods_to_try:
             try:
-                # Use download instead of history for more reliable data fetching
-                data = yf.download(symbol, period=period, progress=False)
+                data = ticker.history(period=period)
                 if not data.empty:
-                    print(f"Successfully fetched data for {symbol} with period {period}")
+                    print(f"Successfully fetched data for {clean_symbol} with period {period}")
                     break
             except Exception as period_error:
-                print(f"Failed to fetch data for {symbol} with period {period}: {str(period_error)}")
+                print(f"Failed to fetch data for {clean_symbol} with period {period}: {str(period_error)}")
                 continue
         
         if data is None or data.empty:
-            return jsonify({'error': f'No data available for {symbol}. Please try a different symbol.'})
+            # Try with US exchange suffix as fallback
+            try:
+                data = yf.Ticker(f"{clean_symbol}").history(period="1mo")
+                if data.empty:
+                    return jsonify({'error': f'No data available for {symbol}. Please try a different symbol.'})
+            except:
+                return jsonify({'error': f'No data available for {symbol}. Please try a different symbol.'})
         
         # Ensure we have at least 2 days of data for change calculation
         if len(data) < 2:
-            return jsonify({'error': f'Insufficient data for {symbol} (only {len(data)} days available)'})
+            return jsonify({'error': f'Insufficient data for {clean_symbol} (only {len(data)} days available)'})
         
-        print(f"Data shape for {symbol}: {data.shape}")
+        print(f"Data shape for {clean_symbol}: {data.shape}")
+        
+        # Get current quote for accurate pricing
+        current_info = ticker.fast_info
+        current_price = current_info.last_price
+        
+        # Calculate change from previous close
+        prev_close = data['Close'].iloc[-2]
+        change = current_price - prev_close
+        change_pct = (change / prev_close) * 100
         
         # Convert to JSON format
         chart_data = {
@@ -201,39 +214,18 @@ def get_stock_data(symbol):
             'low': data['Low'].tolist(),
             'close': data['Close'].tolist(),
             'volume': data['Volume'].tolist(),
-            'current_price': float(data['Close'].iloc[-1]),
-            'change': float(data['Close'].iloc[-1] - data['Close'].iloc[-2]),
-            'change_pct': float((data['Close'].iloc[-1] - data['Close'].iloc[-2]) / data['Close'].iloc[-2] * 100)
+            'current_price': float(current_price),
+            'change': float(change),
+            'change_pct': float(change_pct)
         }
         
-        print(f"Successfully prepared real chart data for {symbol}")
+        print(f"Successfully prepared real chart data for {clean_symbol}")
         return jsonify(chart_data)
         
     except Exception as e:
         error_msg = f"Error fetching data for {symbol}: {str(e)}"
         print(error_msg)
         return jsonify({'error': error_msg})
-
-@app.route('/api/execute_trade', methods=['POST'])
-def execute_trade():
-    """API endpoint to execute trades"""
-    try:
-        data = request.get_json()
-        symbol = data.get('symbol')
-        action = data.get('action')
-        quantity = int(data.get('quantity', 0))
-        
-        # Simulate trade execution
-        result = {
-            'status': 'success',
-            'message': f'{action} order for {quantity} shares of {symbol} executed successfully',
-            'timestamp': datetime.now().isoformat(),
-            'order_id': f'ORD{datetime.now().strftime("%Y%m%d%H%M%S")}'
-        }
-        
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/api/portfolio')
 def get_portfolio():
@@ -303,6 +295,20 @@ def create_backup():
 def health_check():
     """Health check endpoint for Render"""
     return jsonify({'status': 'healthy'})
+
+@app.route('/api/search_symbols/<query>')
+def search_symbols(query):
+    """Search for stock symbols by company name"""
+    try:
+        search_results = yf.Ticker(query).info
+        results = [{
+            'symbol': search_results.get('symbol', query),
+            'name': search_results.get('shortName', query),
+            'exchange': search_results.get('exchange', 'N/A')
+        }]
+        return jsonify(results)
+    except:
+        return jsonify([])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
