@@ -78,20 +78,65 @@ I used:
 - Real-time updates without refreshing
 - Customizable layout
 
-## 🧠 Trading Strategies
+## 🧠 Machine Learning Models & Trading Strategies
 
-TradePro includes several trading strategies you can use:
+TradePro uses several machine learning models to predict market movements and generate trading signals:
 
-### Moving Average Strategy
+### Prophet Model
+- **What it is**: A forecasting model created by Facebook that's good at finding patterns in time series data
+- **How it works**: It breaks down price data into trend, seasonal patterns, and holiday effects
+- **Why it's useful**: It handles missing data well and can spot non-linear trends in stock prices
+- **What we adjust**: How sensitive it is to trend changes and how it handles seasonal patterns
+
+### ARIMA Model
+- **What it is**: A statistical model that uses past values and errors to predict future prices
+- **How it works**: It combines three components - past values (AR), difference between values (I), and moving averages of errors (MA)
+- **Why it's useful**: It's good at capturing short-term patterns in stock prices
+- **What we adjust**: How many past values to use and how many differences to take
+
+### LSTM Neural Networks
+- **What it is**: A special type of neural network that's good at learning patterns in sequence data
+- **How it works**: It has "memory cells" that can remember important information and forget irrelevant details
+- **Why it's useful**: It can spot complex patterns in stock prices that simpler models might miss
+- **What we adjust**: How many layers to use, how many neurons per layer, and how much data to feed it
+
+### Random Forest
+- **What it is**: A model that uses many decision trees to make better predictions
+- **How it works**: It creates many different decision trees and lets them vote on the best prediction
+- **Why it's useful**: It's less likely to overfit and can handle many different types of data
+- **What we adjust**: How many trees to use and how deep each tree can grow
+
+### Ensemble Model
+- **What it is**: A combination of multiple models to get better predictions
+- **How it works**: It takes predictions from all the models above and combines them intelligently
+- **Why it's useful**: It usually performs better than any single model alone
+- **What we adjust**: How much weight to give each model's prediction
+
+### Feature Engineering
+- **What it does**: Creates useful inputs for our models from raw price data
+- **Examples**: Technical indicators (RSI, MACD), volatility measures, momentum indicators
+- **Why it's useful**: Helps models find patterns that aren't obvious in raw price data
+
+### Reinforcement Learning
+- **What it is**: A type of machine learning where an agent learns by interacting with the market
+- **How it works**: The agent tries different trading actions and learns from the results
+- **Why it's useful**: It can develop complex trading strategies that adapt to changing markets
+- **What we adjust**: How to balance immediate profits vs. long-term returns
+
+### Traditional Trading Strategies
+
+Besides machine learning, TradePro also includes traditional trading strategies:
+
+#### Moving Average Strategy
 This strategy buys when a short-term average crosses above a long-term average (golden cross) and sells when it crosses below (death cross). It's simple but effective for trending markets.
 
-### RSI Strategy
+#### RSI Strategy
 The Relative Strength Index measures if a stock is overbought or oversold. This strategy buys when RSI is below 30 (oversold) and sells when it's above 70 (overbought).
 
-### MACD Strategy
+#### MACD Strategy
 The Moving Average Convergence Divergence looks at the relationship between two moving averages. It generates buy signals when the MACD line crosses above the signal line and sell signals when it crosses below.
 
-### Bollinger Bands Strategy
+#### Bollinger Bands Strategy
 This uses a moving average with upper and lower bands that are 2 standard deviations away. It buys when price touches the lower band (potential support) and sells when it touches the upper band (potential resistance).
 
 ## 🚀 Getting Started
