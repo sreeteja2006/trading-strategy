@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 from strategy import generate_signals
 import argparse
 import logging
+import os
 from preprocessing import preprocess_data
+from reporting import Report
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 

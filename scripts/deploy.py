@@ -1,44 +1,91 @@
 import os
 import argparse
-import boto3
-from botocore.exceptions import ClientError
+import subprocess
+import sys
 
-def deploy_to_aws(region="us-east-1"):
-    """Deploy the application to AWS ECS"""
+def run_command(command, description):
+    """Run a shell command and handle errors"""
+    print(f"Running: {description}")
     try:
-        # Initialize AWS clients
-        ecr = boto3.client('ecr', region_name=region)
-        ecs = boto3.client('ecs', region_name=region)
-        
-        # Create ECR repository if it doesn't exist
-        try:
-            ecr.create_repository(repositoryName='trading-strategy')
-        except ClientError as e:
-            if e.response['Error']['Code'] != 'RepositoryAlreadyExistsException':
-                raise
-        
-        # Build and push Docker image
-        os.system(f"""
-            aws ecr get-login-password --region {region} | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.{region}.amazonaws.com
-            docker build -t trading-strategy .
-            docker tag trading-strategy:latest $(aws sts get-caller-identity --query Account --output text).dkr.ecr.{region}.amazonaws.com/trading-strategy:latest
-            docker push $(aws sts get-caller-identity --query Account --output text).dkr.ecr.{region}.amazonaws.com/trading-strategy:latest
-        """)
-        
-        # Update ECS service
-        ecs.update_service(
-            cluster='trading-cluster',
-            service='trading-service',
-            forceNewDeployment=True
-        )
-        
-        print("Deployment successful!")
-        
-    except Exception as e:
-        print(f"Deployment failed: {str(e)}")
+        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        print(f"✓ {description} completed successfully")
+        if result.stdout:
+            print(result.stdout)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"✗ {description} failed: {e}")
+        if e.stderr:
+            print(f"Error: {e.stderr}")
+        return False
+
+def deploy_local():
+    """Deploy the application locally using Docker Compose"""
+    print("🚀 Starting local deployment...")
+    
+    # Stop any existing containers
+    run_command("docker-compose down", "Stopping existing containers")
+    
+    # Build and start the application
+    if not run_command("docker-compose build", "Building Docker image"):
+        return False
+    
+    if not run_command("docker-compose up -d", "Starting application"):
+        return False
+    
+    print("\n✅ Deployment successful!")
+    print("📊 Your trading strategy is now running at: http://localhost:8080")
+    print("📋 To view logs: docker-compose logs -f")
+    print("🛑 To stop: docker-compose down")
+    
+    return True
+
+def deploy_production():
+    """Deploy for production (without AWS)"""
+    print("🚀 Starting production deployment...")
+    
+    # Build optimized image
+    if not run_command("docker build -t trading-strategy:latest .", "Building production image"):
+        return False
+    
+    # Stop existing container if running
+    run_command("docker stop trading-strategy-prod 2>/dev/null || true", "Stopping existing container")
+    run_command("docker rm trading-strategy-prod 2>/dev/null || true", "Removing existing container")
+    
+    # Run in production mode
+    prod_command = """docker run -d \
+        --name trading-strategy-prod \
+        --restart unless-stopped \
+        -p 8080:8080 \
+        -v $(pwd)/data:/app/data \
+        -v $(pwd)/reports:/app/reports \
+        -e PYTHONPATH=/app \
+        -e MATPLOTLIB_BACKEND=Agg \
+        trading-strategy:latest"""
+    
+    if not run_command(prod_command, "Starting production container"):
+        return False
+    
+    print("\n✅ Production deployment successful!")
+    print("📊 Application running on port 8080")
+    print("📋 To view logs: docker logs -f trading-strategy-prod")
+    print("🛑 To stop: docker stop trading-strategy-prod")
+    
+    return True
+
+def show_status():
+    """Show current deployment status"""
+    print("📊 Current deployment status:")
+    run_command("docker ps | grep trading", "Checking running containers")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--region", default="us-east-1", help="AWS region")
+    parser = argparse.ArgumentParser(description="Deploy trading strategy application")
+    parser.add_argument("--mode", choices=["local", "production", "status"], 
+                       default="local", help="Deployment mode")
     args = parser.parse_args()
-    deploy_to_aws(args.region)
+    
+    if args.mode == "local":
+        deploy_local()
+    elif args.mode == "production":
+        deploy_production()
+    elif args.mode == "status":
+        show_status()

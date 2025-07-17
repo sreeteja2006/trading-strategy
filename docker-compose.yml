@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  trading-strategy:
+    build: .
+    container_name: trading-strategy-app
+    environment:
+      - PYTHONPATH=/app
+      - MATPLOTLIB_BACKEND=Agg
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    command: python scripts/main.py --stock RELIANCE.NS --start 2023-01-01 --end 2024-12-31
