@@ -234,8 +234,12 @@ tradepro/
 ### Trading Settings (config/trading_config.json)
 ```json
 {
-  "symbols": ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK"],
-  "max_positions": 5,
+  "symbols": [
+    "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", 
+    "NIFTY50", "NIFTYBANK", "NIFTYMIDCAP", 
+    "GOLD", "SILVER", "CRUDEOIL", "NATURALGAS", "COPPER"
+  ],
+  "max_positions": 8,
   "position_size_pct": 0.1,
   "stop_loss_pct": 0.05,
   "take_profit_pct": 0.15,
