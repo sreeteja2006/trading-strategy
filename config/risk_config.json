@@ -1,0 +1,7 @@
+{
+  "max_portfolio_risk": 0.02,
+  "max_position_size_pct": 0.2,
+  "correlation_threshold": 0.7,
+  "max_sector_exposure": 0.3,
+  "volatility_threshold": 0.25
+}

@@ -9,7 +9,7 @@ import plotly.express as px
 from datetime import datetime, timedelta
 import json
 import os
-from paper_trading import PaperTradingAccount
+# from paper_trading import PaperTradingAccount
 
 st.set_page_config(
     page_title="Trading Performance Dashboard",
@@ -17,25 +17,24 @@ st.set_page_config(
     layout="wide"
 )
 
-def load_account_data():
-    """Load paper trading account data"""
-    account = PaperTradingAccount()
-    if account.load_account():
-        return account
-    return None
-
 def main():
     st.title("💰 Trading Performance Dashboard")
     
-    # Load account data
-    account = load_account_data()
+    # Mock data for demo purposes
+    st.info("📝 Demo Mode: Showing sample trading performance data")
     
-    if account is None:
-        st.error("No trading account found. Run paper_trading.py first!")
-        return
-    
-    # Get portfolio summary
-    summary = account.get_portfolio_summary()
+    # Mock portfolio summary
+    summary = {
+        'total_portfolio_value': 1250000,
+        'total_return': 50000,
+        'total_return_pct': 4.17,
+        'cash_balance': 250000,
+        'positions': {
+            'RELIANCE': {'shares': 100, 'avg_price': 2450, 'current_price': 2475, 'market_value': 247500, 'pnl': 2500, 'pnl_pct': 1.02},
+            'TCS': {'shares': 50, 'avg_price': 3500, 'current_price': 3560, 'market_value': 178000, 'pnl': 3000, 'pnl_pct': 1.71},
+            'INFY': {'shares': 200, 'avg_price': 1800, 'current_price': 1825, 'market_value': 365000, 'pnl': 5000, 'pnl_pct': 1.39}
+        }
+    }
     
     # Top metrics
     col1, col2, col3, col4 = st.columns(4)
@@ -99,53 +98,39 @@ def main():
         df_positions = pd.DataFrame(positions_data)
         st.dataframe(df_positions, use_container_width=True)
     
-    # Transaction history
-    if account.transactions:
-        st.subheader("📝 Transaction History")
-        
-        # Convert transactions to DataFrame
-        transactions_data = []
-        for t in account.transactions:
-            transactions_data.append({
-                'Date': t['timestamp'].strftime('%Y-%m-%d'),
-                'Time': t['timestamp'].strftime('%H:%M:%S'),
-                'Action': t['action'],
-                'Symbol': t['symbol'],
-                'Shares': t['shares'],
-                'Price': f"₹{t['price']:.2f}",
-                'Total': f"₹{t['total']:,.2f}",
-                'Balance After': f"₹{t['balance_after']:,.2f}"
-            })
-        
-        df_transactions = pd.DataFrame(transactions_data)
-        st.dataframe(df_transactions.tail(20), use_container_width=True)
-        
-        # Transaction summary
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            buy_transactions = [t for t in account.transactions if t['action'] == 'BUY']
-            sell_transactions = [t for t in account.transactions if t['action'] == 'SELL']
-            
-            st.metric("Total Transactions", len(account.transactions))
-            st.metric("Buy Orders", len(buy_transactions))
-            st.metric("Sell Orders", len(sell_transactions))
-        
-        with col2:
-            if buy_transactions:
-                total_invested = sum(t['total'] for t in buy_transactions)
-                st.metric("Total Invested", f"₹{total_invested:,.2f}")
-            
-            if sell_transactions:
-                total_proceeds = sum(t['total'] for t in sell_transactions)
-                st.metric("Total Proceeds", f"₹{total_proceeds:,.2f}")
+    # Transaction history (mock data)
+    st.subheader("📝 Recent Transactions")
+    
+    # Mock transaction data
+    transactions_data = [
+        {'Date': '2025-01-17', 'Time': '09:15:00', 'Action': 'BUY', 'Symbol': 'RELIANCE', 'Shares': 100, 'Price': '₹2,450.00', 'Total': '₹2,45,000', 'Balance After': '₹7,55,000'},
+        {'Date': '2025-01-16', 'Time': '14:30:00', 'Action': 'BUY', 'Symbol': 'TCS', 'Shares': 50, 'Price': '₹3,500.00', 'Total': '₹1,75,000', 'Balance After': '₹10,00,000'},
+        {'Date': '2025-01-15', 'Time': '11:45:00', 'Action': 'SELL', 'Symbol': 'INFY', 'Shares': 25, 'Price': '₹1,820.00', 'Total': '₹45,500', 'Balance After': '₹11,75,000'},
+        {'Date': '2025-01-14', 'Time': '10:20:00', 'Action': 'BUY', 'Symbol': 'INFY', 'Shares': 200, 'Price': '₹1,800.00', 'Total': '₹3,60,000', 'Balance After': '₹11,30,000'},
+    ]
+    
+    df_transactions = pd.DataFrame(transactions_data)
+    st.dataframe(df_transactions, use_container_width=True)
+    
+    # Transaction summary
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric("Total Transactions", "15")
+        st.metric("Buy Orders", "9")
+        st.metric("Sell Orders", "6")
+    
+    with col2:
+        st.metric("Total Invested", "₹8,50,000")
+        st.metric("Total Proceeds", "₹2,15,000")
     
     # Performance chart (if we have historical data)
     st.subheader("📈 Performance Over Time")
     
-    # Create sample performance data (in real implementation, you'd track this)
+    # Create sample performance data
     dates = pd.date_range(start=datetime.now() - timedelta(days=30), end=datetime.now(), freq='D')
-    portfolio_values = [account.initial_balance + (i * 100) + (i % 7 * 50) for i in range(len(dates))]
+    initial_balance = 1200000
+    portfolio_values = [initial_balance + (i * 1000) + (i % 7 * 500) for i in range(len(dates))]
     
     fig_performance = go.Figure()
     fig_performance.add_trace(go.Scatter(
@@ -157,7 +142,7 @@ def main():
     ))
     
     fig_performance.add_hline(
-        y=account.initial_balance, 
+        y=initial_balance, 
         line_dash="dash", 
         line_color="red",
         annotation_text="Initial Balance"

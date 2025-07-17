@@ -2,26 +2,25 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Copy requirements file first for better caching
+COPY requirements-flask.txt .
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements-flask.txt
 
-# Copy application code
-COPY scripts/ ./scripts/
-COPY notebooks/ ./notebooks/
+# Copy project files
+COPY . .
+
+# Expose port for Flask
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:5000/api/system_status || exit 1
 
 # Set environment variables
-ENV PYTHONPATH=/app
-ENV MATPLOTLIB_BACKEND=Agg
+ENV PYTHONPATH="${PYTHONPATH}:/app"
+ENV FLASK_APP=web_app.py
 
-# Expose port (if needed for web interface)
-EXPOSE 8080
-
-# Default command
-CMD ["python", "scripts/main.py", "--stock", "RELIANCE.NS"]
+# Command to run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "web_app:app"]

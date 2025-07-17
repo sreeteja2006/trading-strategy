@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-Paper Trading System - Test your strategy with virtual money
+Paper Trading System
+
+A virtual trading system that allows testing of trading strategies without real money.
+Provides realistic simulation of buy/sell orders with portfolio tracking and performance analysis.
 """
 import sys
 sys.path.append('scripts')
@@ -10,6 +13,11 @@ import yfinance as yf
 from datetime import datetime, timedelta
 import json
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class PaperTradingAccount:
     def __init__(self, initial_balance=100000):
@@ -189,7 +197,7 @@ class PaperTradingAccount:
 
 def run_paper_trading_demo():
     """Demo of paper trading system"""
-    print("🎯 Paper Trading System Demo")
+    print("Paper Trading System Demo")
     print("=" * 50)
     
     # Create account
@@ -197,22 +205,22 @@ def run_paper_trading_demo():
     
     # Try to load existing account
     if account.load_account():
-        print("📂 Loaded existing account")
+        print("Loaded existing account")
     else:
-        print("🆕 Created new account")
+        print("Created new account")
     
-    print(f"💰 Starting Balance: ₹{account.balance:,.2f}")
+    print(f"Starting Balance: Rs.{account.balance:,.2f}")
     
     # Demo trades
     symbols = ['RELIANCE.NS', 'TCS.NS', 'INFY.NS']
     
     for symbol in symbols:
-        print(f"\n📊 Testing {symbol}...")
+        print(f"\nTesting {symbol}...")
         
         # Get current price
         price = account.get_current_price(symbol)
         if price:
-            print(f"Current price: ₹{price:.2f}")
+            print(f"Current price: Rs.{price:.2f}")
             
             # Buy some shares
             shares_to_buy = 10
@@ -220,32 +228,32 @@ def run_paper_trading_demo():
             print(f"Buy order: {message}")
             
         else:
-            print(f"❌ Could not get price for {symbol}")
+            print(f"Could not get price for {symbol}")
     
     # Show portfolio summary
-    print("\n📈 Portfolio Summary:")
+    print("\nPortfolio Summary:")
     print("=" * 30)
     summary = account.get_portfolio_summary()
     
-    print(f"Cash Balance: ₹{summary['cash_balance']:,.2f}")
-    print(f"Total Portfolio Value: ₹{summary['total_portfolio_value']:,.2f}")
-    print(f"Total Return: ₹{summary['total_return']:,.2f} ({summary['total_return_pct']:+.2f}%)")
+    print(f"Cash Balance: Rs.{summary['cash_balance']:,.2f}")
+    print(f"Total Portfolio Value: Rs.{summary['total_portfolio_value']:,.2f}")
+    print(f"Total Return: Rs.{summary['total_return']:,.2f} ({summary['total_return_pct']:+.2f}%)")
     
-    print("\n📋 Positions:")
+    print("\nPositions:")
     for symbol, pos in summary['positions'].items():
-        print(f"{symbol}: {pos['shares']} shares @ ₹{pos['avg_price']:.2f} "
-              f"(Current: ₹{pos['current_price']:.2f}, P&L: ₹{pos['pnl']:+.2f})")
+        print(f"{symbol}: {pos['shares']} shares @ Rs.{pos['avg_price']:.2f} "
+              f"(Current: Rs.{pos['current_price']:.2f}, P&L: Rs.{pos['pnl']:+.2f})")
     
     # Show recent transactions
-    print("\n📝 Recent Transactions:")
+    print("\nRecent Transactions:")
     for transaction in account.transactions[-5:]:
         print(f"{transaction['timestamp'].strftime('%Y-%m-%d %H:%M')} - "
               f"{transaction['action']} {transaction['shares']} {transaction['symbol']} "
-              f"@ ₹{transaction['price']:.2f}")
+              f"@ Rs.{transaction['price']:.2f}")
     
     # Save account
     account.save_account()
-    print("\n💾 Account saved!")
+    print("\nAccount saved!")
     
     return account
 

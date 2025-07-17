@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Trading System - Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Trading Strategy System</h1>
+        <p class="lead">Welcome to your all-in-one trading strategy platform</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Portfolio Value</h5>
+                <h2 class="card-text">₹{{ "{:,.2f}".format(stats.portfolio_value) }}</h2>
+                <p class="card-text">
+                    <small>
+                        <i class="bi bi-arrow-up-right"></i>
+                        ₹{{ "{:+,.2f}".format(stats.total_pnl) }}
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Cash Balance</h5>
+                <h2 class="card-text">₹{{ "{:,.2f}".format(stats.cash_balance) }}</h2>
+                <p class="card-text">
+                    <small>Available for trading</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Today's Trades</h5>
+                <h2 class="card-text">{{ stats.today_trades }}</h2>
+                <p class="card-text">
+                    <small>Orders executed today</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <h5 class="card-title">System Uptime</h5>
+                <h2 class="card-text">{{ stats.system_uptime }}</h2>
+                <p class="card-text">
+                    <small>Continuous operation</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h3>Available Applications</h3>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-graph-up text-primary"></i>
+                    Trading Dashboard
+                </h5>
+                <p class="card-text">Monitor real-time market data and technical indicators</p>
+                <a href="/dashboard" class="btn btn-primary">Launch</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-cash-coin text-success"></i>
+                    Performance Dashboard
+                </h5>
+                <p class="card-text">Track your trading strategy results and portfolio performance</p>
+                <a href="/performance" class="btn btn-success">Launch</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-currency-exchange text-danger"></i>
+                    Trading Interface
+                </h5>
+                <p class="card-text">Execute trades and manage your trading strategy</p>
+                <a href="/trading" class="btn btn-danger">Launch</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-pc-display text-info"></i>
+                    System Status
+                </h5>
+                <p class="card-text">Monitor system health, resources, and container status</p>
+                <a href="/system" class="btn btn-info">Launch</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <h3>Recent Activity</h3>
+        <div class="list-group">
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">Buy signal generated for RELIANCE</h5>
+                    <small>10:15 AM</small>
+                </div>
+                <p class="mb-1">RSI oversold condition detected with high volume</p>
+            </div>
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">Executed buy order: 5 RELIANCE @ ₹2,450.75</h5>
+                    <small>10:30 AM</small>
+                </div>
+                <p class="mb-1">Order executed successfully</p>
+            </div>
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">Portfolio rebalanced</h5>
+                    <small>11:45 AM</small>
+                </div>
+                <p class="mb-1">Adjusted position sizes based on risk parameters</p>
+            </div>
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">Sell signal generated for TCS</h5>
+                    <small>01:30 PM</small>
+                </div>
+                <p class="mb-1">RSI overbought condition detected</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

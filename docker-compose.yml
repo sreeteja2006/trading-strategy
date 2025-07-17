@@ -1,16 +1,26 @@
-version: '3.8'
-
 services:
-  trading-strategy:
+  trading-app:
     build: .
     container_name: trading-strategy-app
-    environment:
-      - PYTHONPATH=/app
-      - MATPLOTLIB_BACKEND=Agg
+    ports:
+      - "80:5000"
     volumes:
       - ./data:/app/data
-      - ./reports:/app/reports
-    ports:
-      - "8080:8080"
+      - ./logs:/app/logs
+      - ./config:/app/config
     restart: unless-stopped
-    command: python scripts/main.py --stock RELIANCE.NS --start 2023-01-01 --end 2024-12-31
+    environment:
+      - PYTHONPATH=/app
+      - FLASK_APP=web_app.py
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/system_status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - trading-network
+
+networks:
+  trading-network:
+    driver: bridge

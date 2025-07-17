@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}Trading Interface{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Trading Interface</h1>
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Demo Mode: Paper trading with virtual money
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Trading Controls</h5>
+            </div>
+            <div class="card-body">
+                <form id="tradeForm">
+                    <div class="mb-3">
+                        <label for="symbol" class="form-label">Select Stock</label>
+                        <select id="symbol" class="form-select">
+                            <option value="RELIANCE">RELIANCE</option>
+                            <option value="TCS">TCS</option>
+                            <option value="INFY">INFOSYS</option>
+                            <option value="HDFCBANK">HDFC BANK</option>
+                            <option value="ICICIBANK">ICICI BANK</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="action" class="form-label">Action</label>
+                        <select id="action" class="form-select">
+                            <option value="BUY">BUY</option>
+                            <option value="SELL">SELL</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" id="quantity" class="form-control" min="1" value="10">
+                    </div>
+                    <div class="mb-3">
+                        <label for="currentPrice" class="form-label">Current Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="text" id="currentPrice" class="form-control" value="0.00" readonly>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="orderValue" class="form-label">Order Value</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="text" id="orderValue" class="form-control" value="0.00" readonly>
+                        </div>
+                    </div>
+                    <button type="button" id="executeOrder" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle"></i> Execute Order
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Portfolio Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Portfolio Value</h6>
+                                <h4 id="portfolioValue">₹0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Cash Balance</h6>
+                                <h4 id="cashBalance">₹0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Total P&L</h6>
+                                <h4 id="totalPnL">₹0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Positions</h6>
+                                <h4 id="positionsCount">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h5>Current Positions</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="positionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Shares</th>
+                                    <th>Avg Price</th>
+                                    <th>Current Price</th>
+                                    <th>Market Value</th>
+                                    <th>P&L</th>
+                                    <th>P&L %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">Recent Trades</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="tradesTable">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Action</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="card-title mb-0">Trading Signals</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="signalsTable">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Signal</th>
+                                <th>Confidence</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Load initial data
+        loadCurrentPrice();
+        loadPortfolio();
+        loadTradingSignals();
+        loadRecentTrades();
+        
+        // Event handlers
+        $('#symbol').change(function() {
+            loadCurrentPrice();
+        });
+        
+        $('#quantity').on('input', function() {
+            updateOrderValue();
+        });
+        
+        $('#executeOrder').click(function() {
+            executeOrder();
+        });
+        
+        // Refresh data every 30 seconds
+        setInterval(function() {
+            loadCurrentPrice();
+            loadPortfolio();
+        }, 30000);
+    });
+    
+    function loadCurrentPrice() {
+        const symbol = $('#symbol').val();
+        
+        $.ajax({
+            url: '/api/stock_data/' + symbol,
+            method: 'GET',
+            success: function(data) {
+                $('#currentPrice').val(data.current_price.toFixed(2));
+                updateOrderValue();
+            },
+            error: function(error) {
+                console.error('Error loading stock data:', error);
+            }
+        });
+    }
+    
+    function updateOrderValue() {
+        const price = parseFloat($('#currentPrice').val()) || 0;
+        const quantity = parseInt($('#quantity').val()) || 0;
+        const orderValue = price * quantity;
+        
+        $('#orderValue').val(orderValue.toFixed(2));
+    }
+    
+    function loadPortfolio() {
+        $.ajax({
+            url: '/api/portfolio',
+            method: 'GET',
+            success: function(data) {
+                updatePortfolioView(data);
+            },
+            error: function(error) {
+                console.error('Error loading portfolio data:', error);
+            }
+        });
+    }
+    
+    function updatePortfolioView(positions) {
+        // Mock data for demo
+        let totalValue = 0;
+        let totalPnL = 0;
+        
+        const tableBody = $('#positionsTable tbody');
+        tableBody.empty();
+        
+        positions.forEach(function(position) {
+            totalValue += position.market_value;
+            totalPnL += position.pnl;
+            
+            const pnlClass = position.pnl >= 0 ? 'text-success' : 'text-danger';
+            
+            tableBody.append(`
+                <tr>
+                    <td>${position.symbol}</td>
+                    <td>${position.shares}</td>
+                    <td>₹${position.avg_price.toFixed(2)}</td>
+                    <td>₹${position.current_price.toFixed(2)}</td>
+                    <td>₹${position.market_value.toLocaleString()}</td>
+                    <td class="${pnlClass}">₹${position.pnl.toFixed(2)}</td>
+                    <td class="${pnlClass}">${position.pnl_pct.toFixed(2)}%</td>
+                </tr>
+            `);
+        });
+        
+        // Update summary metrics
+        $('#portfolioValue').text('₹' + totalValue.toLocaleString());
+        $('#cashBalance').text('₹250,000.00');
+        $('#totalPnL').text('₹' + totalPnL.toLocaleString());
+        $('#positionsCount').text(positions.length);
+    }
+    
+    function loadTradingSignals() {
+        // Mock data for demo
+        const signals = [
+            {symbol: 'RELIANCE', signal: 'BUY', confidence: '75%', reason: 'RSI Oversold + Volume Spike'},
+            {symbol: 'TCS', signal: 'HOLD', confidence: '45%', reason: 'Neutral indicators'},
+            {symbol: 'INFY', signal: 'SELL', confidence: '68%', reason: 'RSI Overbought'},
+            {symbol: 'HDFCBANK', signal: 'BUY', confidence: '82%', reason: 'Bullish breakout'}
+        ];
+        
+        const tableBody = $('#signalsTable tbody');
+        tableBody.empty();
+        
+        signals.forEach(function(signal) {
+            let signalClass = '';
+            if (signal.signal === 'BUY') signalClass = 'bg-success text-white';
+            else if (signal.signal === 'SELL') signalClass = 'bg-danger text-white';
+            else signalClass = 'bg-secondary text-white';
+            
+            tableBody.append(`
+                <tr>
+                    <td><strong>${signal.symbol}</strong></td>
+                    <td><span class="badge ${signalClass}">${signal.signal}</span></td>
+                    <td>${signal.confidence}</td>
+                    <td>${signal.reason}</td>
+                </tr>
+            `);
+        });
+    }
+    
+    function loadRecentTrades() {
+        // Mock data for demo
+        const trades = [
+            {time: '14:30:15', symbol: 'RELIANCE', action: 'BUY', quantity: 50, price: '₹2,475.00', total: '₹123,750.00', status: 'Executed'},
+            {time: '13:45:22', symbol: 'TCS', action: 'SELL', quantity: 25, price: '₹3,560.00', total: '₹89,000.00', status: 'Executed'},
+            {time: '12:15:08', symbol: 'INFY', action: 'BUY', quantity: 100, price: '₹1,825.00', total: '₹182,500.00', status: 'Executed'},
+            {time: '11:30:45', symbol: 'HDFCBANK', action: 'BUY', quantity: 30, price: '₹1,650.00', total: '₹49,500.00', status: 'Executed'}
+        ];
+        
+        const tableBody = $('#tradesTable tbody');
+        tableBody.empty();
+        
+        trades.forEach(function(trade) {
+            const actionClass = trade.action === 'BUY' ? 'text-success' : 'text-danger';
+            
+            tableBody.append(`
+                <tr>
+                    <td>${trade.time}</td>
+                    <td>${trade.symbol}</td>
+                    <td class="${actionClass}"><strong>${trade.action}</strong></td>
+                    <td>${trade.quantity}</td>
+                    <td>${trade.price}</td>
+                    <td>${trade.total}</td>
+                    <td><span class="badge bg-success">${trade.status}</span></td>
+                </tr>
+            `);
+        });
+    }
+    
+    function executeOrder() {
+        const symbol = $('#symbol').val();
+        const action = $('#action').val();
+        const quantity = parseInt($('#quantity').val());
+        const price = parseFloat($('#currentPrice').val());
+        
+        if (!symbol || !action || isNaN(quantity) || quantity <= 0 || isNaN(price) || price <= 0) {
+            alert('Please fill in all fields correctly');
+            return;
+        }
+        
+        // Show loading
+        $('#executeOrder').html('<span class="spinner-border spinner-border-sm"></span> Processing...');
+        $('#executeOrder').prop('disabled', true);
+        
+        // Simulate API call
+        setTimeout(function() {
+            // Add to recent trades
+            const tableBody = $('#tradesTable tbody');
+            const now = new Date();
+            const timeString = now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds();
+            const total = price * quantity;
+            
+            const actionClass = action === 'BUY' ? 'text-success' : 'text-danger';
+            
+            tableBody.prepend(`
+                <tr>
+                    <td>${timeString}</td>
+                    <td>${symbol}</td>
+                    <td class="${actionClass}"><strong>${action}</strong></td>
+                    <td>${quantity}</td>
+                    <td>₹${price.toFixed(2)}</td>
+                    <td>₹${total.toLocaleString()}</td>
+                    <td><span class="badge bg-success">Executed</span></td>
+                </tr>
+            `);
+            
+            // Show success message
+            alert(`${action} order for ${quantity} shares of ${symbol} executed successfully!`);
+            
+            // Reset button
+            $('#executeOrder').html('<i class="bi bi-check-circle"></i> Execute Order');
+            $('#executeOrder').prop('disabled', false);
+            
+            // Refresh portfolio
+            loadPortfolio();
+        }, 1500);
+    }
+</script>
+{% endblock %}

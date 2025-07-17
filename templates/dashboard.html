@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Trading Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Trading Dashboard</h1>
+        <div class="d-flex justify-content-between mb-3">
+            <div>
+                <select id="stockSymbol" class="form-select">
+                    <option value="RELIANCE.NS">RELIANCE</option>
+                    <option value="TCS.NS">TCS</option>
+                    <option value="INFY.NS">INFOSYS</option>
+                    <option value="HDFCBANK.NS">HDFC BANK</option>
+                </select>
+            </div>
+            <div>
+                <select id="timeframe" class="form-select">
+                    <option value="1mo">1 Month</option>
+                    <option value="3mo">3 Months</option>
+                    <option value="6mo">6 Months</option>
+                    <option value="1y">1 Year</option>
+                </select>
+            </div>
+            <div>
+                <button id="refreshData" class="btn btn-primary">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Current Price</h5>
+                <h2 id="currentPrice" class="card-text">₹0.00</h2>
+                <p id="priceChange" class="card-text">
+                    <span class="badge bg-success">+0.00%</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Volume</h5>
+                <h2 id="volume" class="card-text">0</h2>
+                <p class="card-text">
+                    <small>Today's trading volume</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">RSI (14)</h5>
+                <h2 id="rsi" class="card-text">0.00</h2>
+                <p id="rsiStatus" class="card-text">
+                    <span class="badge bg-secondary">Neutral</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Moving Averages</h5>
+                <p class="card-text">SMA 20: <span id="sma20">₹0.00</span></p>
+                <p class="card-text">SMA 50: <span id="sma50">₹0.00</span></p>
+                <p id="trendStatus" class="card-text">
+                    <span class="badge bg-secondary">Neutral</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Price Chart</h5>
+                <div id="priceChart" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Volume Chart</h5>
+                <div id="volumeChart" style="height: 200px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Recent Data</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="recentData">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Open</th>
+                                <th>High</th>
+                                <th>Low</th>
+                                <th>Close</th>
+                                <th>Volume</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Load initial data
+        loadStockData('RELIANCE.NS');
+        
+        // Event handlers
+        $('#stockSymbol').change(function() {
+            loadStockData($(this).val());
+        });
+        
+        $('#refreshData').click(function() {
+            loadStockData($('#stockSymbol').val());
+        });
+    });
+    
+    function loadStockData(symbol) {
+        $.ajax({
+            url: '/api/stock_data/' + symbol.replace('.NS', ''),
+            method: 'GET',
+            success: function(data) {
+                updateDashboard(data);
+            },
+            error: function(error) {
+                console.error('Error loading stock data:', error);
+            }
+        });
+    }
+    
+    function updateDashboard(data) {
+        // Update metrics
+        $('#currentPrice').text('₹' + data.current_price.toFixed(2));
+        $('#volume').text(data.volume[data.volume.length - 1].toLocaleString());
+        
+        // Update price change
+        const changeClass = data.change >= 0 ? 'bg-success' : 'bg-danger';
+        const changeSign = data.change >= 0 ? '+' : '';
+        $('#priceChange').html(`<span class="badge ${changeClass}">${changeSign}${data.change.toFixed(2)} (${changeSign}${data.change_pct.toFixed(2)}%)</span>`);
+        
+        // Create price chart
+        const trace = {
+            x: data.dates,
+            close: data.close,
+            high: data.high,
+            low: data.low,
+            open: data.open,
+            type: 'candlestick',
+            name: $('#stockSymbol option:selected').text()
+        };
+        
+        const layout = {
+            title: $('#stockSymbol option:selected').text() + ' Price Chart',
+            yaxis: {title: 'Price (₹)'},
+            xaxis: {title: 'Date'},
+            margin: {l: 50, r: 20, t: 40, b: 40}
+        };
+        
+        Plotly.newPlot('priceChart', [trace], layout);
+        
+        // Create volume chart
+        const volumeTrace = {
+            x: data.dates,
+            y: data.volume,
+            type: 'bar',
+            name: 'Volume'
+        };
+        
+        const volumeLayout = {
+            title: 'Trading Volume',
+            yaxis: {title: 'Volume'},
+            xaxis: {title: 'Date'},
+            margin: {l: 50, r: 20, t: 40, b: 40}
+        };
+        
+        Plotly.newPlot('volumeChart', [volumeTrace], volumeLayout);
+        
+        // Update recent data table
+        const tableBody = $('#recentData tbody');
+        tableBody.empty();
+        
+        for (let i = data.dates.length - 10; i < data.dates.length; i++) {
+            tableBody.append(`
+                <tr>
+                    <td>${data.dates[i]}</td>
+                    <td>₹${data.open[i].toFixed(2)}</td>
+                    <td>₹${data.high[i].toFixed(2)}</td>
+                    <td>₹${data.low[i].toFixed(2)}</td>
+                    <td>₹${data.close[i].toFixed(2)}</td>
+                    <td>${data.volume[i].toLocaleString()}</td>
+                </tr>
+            `);
+        }
+    }
+</script>
+{% endblock %}

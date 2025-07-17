@@ -266,15 +266,15 @@ class RiskManager:
         metrics = self.calculate_portfolio_metrics()
         
         report = f"""
-🛡️  RISK MANAGEMENT REPORT
+RISK MANAGEMENT REPORT
 {'='*50}
 
-💼 Portfolio Overview:
+Portfolio Overview:
    Initial Capital: ₹{self.initial_capital:,.2f}
    Current Capital: ₹{self.current_capital:,.2f}
    Active Positions: {len(self.positions)}
 
-📊 Risk Metrics:
+Risk Metrics:
    Total Return: ₹{metrics.get('total_return', 0):,.2f}
    Avg Daily Return: {metrics.get('avg_daily_return', 0):.4f}
    Volatility: {metrics.get('volatility', 0):.4f}
@@ -283,7 +283,7 @@ class RiskManager:
    Win Rate: {metrics.get('win_rate', 0):.1%}
    VaR (95%): {metrics.get('var_95', 0):.4f}
 
-🎯 Current Positions:
+Current Positions:
         """
         
         if self.positions:
@@ -301,7 +301,7 @@ class RiskManager:
         
         report += f"""
 
-🏭 Sector Exposure:
+Sector Exposure:
         """
         
         if self.sector_exposure:
@@ -325,7 +325,7 @@ class RiskManager:
 
 def main():
     """Demo of risk management system"""
-    print("🛡️  Risk Management System Demo")
+    print("Risk Management System Demo")
     print("=" * 40)
     
     # Create risk manager
@@ -343,10 +343,10 @@ def main():
         is_valid, message = risk_manager.validate_trade(symbol, action, quantity, price, sector)
         
         if is_valid:
-            print(f"✅ {action} {quantity} {symbol} @ ₹{price:.2f} - {message}")
+            print(f"APPROVED: {action} {quantity} {symbol} @ ₹{price:.2f} - {message}")
             risk_manager.update_position(symbol, action, quantity, price, sector)
         else:
-            print(f"❌ {action} {quantity} {symbol} @ ₹{price:.2f} - {message}")
+            print(f"REJECTED: {action} {quantity} {symbol} @ ₹{price:.2f} - {message}")
     
     # Generate risk report
     print(risk_manager.generate_risk_report())
@@ -361,7 +361,7 @@ def main():
     alerts = risk_manager.check_stop_loss_take_profit(current_prices)
     
     if alerts:
-        print("\n🚨 TRADING ALERTS:")
+        print("\nTRADING ALERTS:")
         for alert in alerts:
             print(f"   {alert['type']}: {alert['action']} {alert['quantity']} {alert['symbol']} "
                   f"@ ₹{alert['current_price']:.2f} (P&L: {alert['pnl_pct']:+.1f}%)")

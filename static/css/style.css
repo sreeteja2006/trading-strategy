@@ -1,0 +1,60 @@
+/* Main styles for Trading System */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.card-title {
+    font-weight: 600;
+}
+
+footer {
+    margin-top: 50px;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Dashboard specific styles */
+#priceChart, #volumeChart {
+    width: 100%;
+    background-color: white;
+}
+
+/* Trading interface styles */
+.trade-form {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+
+/* Performance dashboard styles */
+.performance-metric {
+    text-align: center;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.positive {
+    color: #28a745;
+}
+
+.negative {
+    color: #dc3545;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 15px;
+    }
+}

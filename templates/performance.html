@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Performance Dashboard</h1>
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Demo Mode: Showing sample trading performance data
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Portfolio Value</h5>
+                <h2 class="card-text">₹{{ "{:,.2f}".format(summary.total_portfolio_value) }}</h2>
+                <p class="card-text">
+                    <small>
+                        <i class="bi bi-arrow-up-right"></i>
+                        ₹{{ "{:+,.2f}".format(summary.total_return) }}
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Total Return</h5>
+                <h2 class="card-text">{{ "{:+.2f}%".format(summary.total_return_pct) }}</h2>
+                <p class="card-text">
+                    <small>Since inception</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Cash Balance</h5>
+                <h2 class="card-text">₹{{ "{:,.2f}".format(summary.cash_balance) }}</h2>
+                <p class="card-text">
+                    <small>Available for trading</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Active Positions</h5>
+                <h2 class="card-text">{{ summary.positions|length }}</h2>
+                <p class="card-text">
+                    <small>Current holdings</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Portfolio Composition</h5>
+            </div>
+            <div class="card-body">
+                <div id="portfolioPieChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Performance Over Time</h5>
+            </div>
+            <div class="card-body">
+                <div id="performanceChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Current Positions</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Shares</th>
+                                <th>Avg Price</th>
+                                <th>Current Price</th>
+                                <th>Market Value</th>
+                                <th>P&L</th>
+                                <th>P&L %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for symbol, pos in summary.positions.items() %}
+                            <tr>
+                                <td><strong>{{ symbol }}</strong></td>
+                                <td>{{ pos.shares }}</td>
+                                <td>₹{{ "{:.2f}".format(pos.avg_price) }}</td>
+                                <td>₹{{ "{:.2f}".format(pos.current_price) }}</td>
+                                <td>₹{{ "{:,.2f}".format(pos.market_value) }}</td>
+                                <td class="{% if pos.pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    ₹{{ "{:+,.2f}".format(pos.pnl) }}
+                                </td>
+                                <td class="{% if pos.pnl_pct >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ "{:+.2f}%".format(pos.pnl_pct) }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Transactions</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Action</th>
+                                <th>Symbol</th>
+                                <th>Shares</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                                <th>Balance After</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2025-01-17</td>
+                                <td>09:15:00</td>
+                                <td class="text-success"><strong>BUY</strong></td>
+                                <td>RELIANCE</td>
+                                <td>100</td>
+                                <td>₹2,450.00</td>
+                                <td>₹2,45,000</td>
+                                <td>₹7,55,000</td>
+                            </tr>
+                            <tr>
+                                <td>2025-01-16</td>
+                                <td>14:30:00</td>
+                                <td class="text-success"><strong>BUY</strong></td>
+                                <td>TCS</td>
+                                <td>50</td>
+                                <td>₹3,500.00</td>
+                                <td>₹1,75,000</td>
+                                <td>₹10,00,000</td>
+                            </tr>
+                            <tr>
+                                <td>2025-01-15</td>
+                                <td>11:45:00</td>
+                                <td class="text-danger"><strong>SELL</strong></td>
+                                <td>INFY</td>
+                                <td>25</td>
+                                <td>₹1,820.00</td>
+                                <td>₹45,500</td>
+                                <td>₹11,75,000</td>
+                            </tr>
+                            <tr>
+                                <td>2025-01-14</td>
+                                <td>10:20:00</td>
+                                <td class="text-success"><strong>BUY</strong></td>
+                                <td>INFY</td>
+                                <td>200</td>
+                                <td>₹1,800.00</td>
+                                <td>₹3,60,000</td>
+                                <td>₹11,30,000</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Transaction Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong>Total Transactions:</strong></p>
+                        <p><strong>Buy Orders:</strong></p>
+                        <p><strong>Sell Orders:</strong></p>
+                    </div>
+                    <div class="col-6 text-end">
+                        <p>15</p>
+                        <p>9</p>
+                        <p>6</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong>Total Invested:</strong></p>
+                        <p><strong>Total Proceeds:</strong></p>
+                    </div>
+                    <div class="col-6 text-end">
+                        <p>₹8,50,000</p>
+                        <p>₹2,15,000</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Strategy Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Win Rate</h6>
+                                <h3>65%</h3>
+                                <p class="card-text">
+                                    <small>Profitable trades</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Avg Trade Return</h6>
+                                <h3 class="text-success">+2.3%</h3>
+                                <p class="card-text">
+                                    <small>Per trade</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Sharpe Ratio</h6>
+                                <h3>1.45</h3>
+                                <p class="card-text">
+                                    <small>Risk-adjusted return</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Best Trade</h6>
+                                <h3 class="text-success">+₹1,250</h3>
+                                <p class="card-text">
+                                    <small>Highest profit</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Worst Trade</h6>
+                                <h3 class="text-danger">-₹850</h3>
+                                <p class="card-text">
+                                    <small>Highest loss</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Max Drawdown</h6>
+                                <h3 class="text-danger">-3.2%</h3>
+                                <p class="card-text">
+                                    <small>Largest decline</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Create portfolio pie chart
+        const symbols = [];
+        const values = [];
+        
+        {% for symbol, pos in summary.positions.items() %}
+            symbols.push('{{ symbol }}');
+            values.push({{ pos.market_value }});
+        {% endfor %}
+        
+        const pieData = [{
+            values: values,
+            labels: symbols,
+            type: 'pie',
+            hole: 0.4,
+            marker: {
+                colors: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b']
+            }
+        }];
+        
+        const pieLayout = {
+            margin: {l: 20, r: 20, t: 20, b: 20},
+            showlegend: true,
+            legend: {
+                orientation: 'h',
+                y: -0.1
+            }
+        };
+        
+        Plotly.newPlot('portfolioPieChart', pieData, pieLayout);
+        
+        // Create performance chart
+        const dates = [];
+        const portfolioValues = [];
+        
+        // Generate sample data for the last 30 days
+        const today = new Date();
+        let initialBalance = 1200000;
+        
+        for (let i = 30; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            dates.push(date.toISOString().split('T')[0]);
+            
+            // Generate some random growth
+            initialBalance += (Math.random() * 10000 - 3000);
+            portfolioValues.push(initialBalance);
+        }
+        
+        const performanceData = [{
+            x: dates,
+            y: portfolioValues,
+            type: 'scatter',
+            mode: 'lines',
+            line: {
+                color: '#4e73df',
+                width: 2
+            },
+            name: 'Portfolio Value'
+        }];
+        
+        const performanceLayout = {
+            margin: {l: 50, r: 20, t: 20, b: 40},
+            xaxis: {
+                title: 'Date'
+            },
+            yaxis: {
+                title: 'Value (₹)',
+                tickformat: ',.0f'
+            }
+        };
+        
+        Plotly.newPlot('performanceChart', performanceData, performanceLayout);
+    });
+</script>
+{% endblock %}

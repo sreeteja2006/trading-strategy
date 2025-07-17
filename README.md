@@ -83,7 +83,7 @@ This project demonstrates the complete pipeline of building an automated trading
 ### Prerequisites
 ```bash
 python 3.9+
-pip install -r requirements.txt
+Docker & Docker Compose (for 24/7 website)
 ```
 
 ### Installation
@@ -95,19 +95,27 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Run the System
+### Run Individual Components
 ```bash
 # 1. Run paper trading demo
-python paper_trading.py
+python scripts/paper_trading.py
 
 # 2. Launch performance dashboard
-streamlit run performance_dashboard.py
+streamlit run apps/performance_dashboard.py
 
 # 3. Test trading strategy
-python simple_strategy.py
+python scripts/run_strategy.py
 
 # 4. Run risk management demo
-python risk_management.py
+python src/risk/risk_manager.py
+```
+
+### Run 24/7 Web Interface
+```bash
+# Start the complete web interface with Docker
+./scripts/start_website.sh
+
+# Access the website at http://localhost:8501
 ```
 
 ## 📈 Sample Results

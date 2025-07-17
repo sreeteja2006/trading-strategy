@@ -1,0 +1,11 @@
+services:
+  # A Flask web service
+  - type: web
+    name: trading-system
+    env: python
+    buildCommand: pip install -r requirements-flask.txt
+    startCommand: gunicorn web_app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+    healthCheckPath: /api/system_status
