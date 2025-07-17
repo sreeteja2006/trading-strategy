@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Trading Symbols - TradePro{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-search"></i> Add New Trading Symbols</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="input-group mb-3">
+                            <input type="text" id="symbolSearch" class="form-control" placeholder="Search for stocks, indices, or commodities (e.g., AAPL, MSFT, ^GSPC)">
+                            <button class="btn btn-primary" type="button" id="searchButton">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            Enter stock symbols, company names, or keywords. For international stocks, use exchange codes (e.g., TSLA for Tesla, 0700.HK for Tencent).
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="marketSelect">
+                            <option value="all">All Markets</option>
+                            <option value="stocks">Stocks</option>
+                            <option value="indices">Indices</option>
+                            <option value="commodities">Commodities</option>
+                            <option value="forex">Forex</option>
+                            <option value="crypto">Crypto</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="searchResults" class="mt-4" style="display: none;">
+                    <h6>Search Results</h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Name</th>
+                                    <th>Market</th>
+                                    <th>Last Price</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <!-- Results will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="noResults" class="alert alert-info mt-4" style="display: none;">
+                    No symbols found matching your search criteria.
+                </div>
+                
+                <div id="searchError" class="alert alert-danger mt-4" style="display: none;">
+                    Error searching for symbols. Please try again.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-star-fill"></i> Your Watchlist</h5>
+                <button class="btn btn-sm btn-outline-primary" id="saveWatchlist">
+                    <i class="bi bi-save"></i> Save Changes
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="watchlistTable">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Name</th>
+                                <th>Market</th>
+                                <th>Last Price</th>
+                                <th>Change</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="watchlistBody">
+                            <!-- Current watchlist will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="emptyWatchlist" class="alert alert-info mt-4" style="display: none;">
+                    Your watchlist is empty. Search for symbols above to add them.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Load current watchlist
+        loadWatchlist();
+        
+        // Search button click handler
+        $('#searchButton').click(function() {
+            searchSymbols();
+        });
+        
+        // Enter key in search box
+        $('#symbolSearch').keypress(function(e) {
+            if (e.which === 13) {
+                searchSymbols();
+            }
+        });
+        
+        // Save watchlist button
+        $('#saveWatchlist').click(function() {
+            saveWatchlist();
+        });
+    });
+    
+    function searchSymbols() {
+        const query = $('#symbolSearch').val().trim();
+        const market = $('#marketSelect').val();
+        
+        if (!query) {
+            return;
+        }
+        
+        // Show loading indicator
+        $('#searchResults').hide();
+        $('#noResults').hide();
+        $('#searchError').hide();
+        $('#searchButton').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...');
+        
+        // Make API call to search for symbols
+        $.ajax({
+            url: '/api/search_symbols',
+            method: 'GET',
+            data: {
+                query: query,
+                market: market
+            },
+            success: function(response) {
+                $('#searchButton').html('<i class="bi bi-search"></i> Search');
+                
+                if (response.status === 'success' && response.data.length > 0) {
+                    displaySearchResults(response.data);
+                } else {
+                    $('#noResults').show();
+                }
+            },
+            error: function(xhr) {
+                $('#searchButton').html('<i class="bi bi-search"></i> Search');
+                $('#searchError').show();
+                console.error('Error searching symbols:', xhr);
+            }
+        });
+    }
+    
+    function displaySearchResults(results) {
+        const tbody = $('#resultsBody');
+        tbody.empty();
+        
+        results.forEach(function(item) {
+            const row = $('<tr>');
+            row.append($('<td>').text(item.symbol));
+            row.append($('<td>').text(item.name));
+            row.append($('<td>').text(item.market));
+            row.append($('<td>').text(item.price ? '₹' + item.price.toFixed(2) : 'N/A'));
+            
+            const addButton = $('<button>')
+                .addClass('btn btn-sm btn-success')
+                .html('<i class="bi bi-plus-circle"></i> Add')
+                .attr('data-symbol', item.symbol)
+                .attr('data-name', item.name)
+                .attr('data-market', item.market)
+                .click(function() {
+                    addToWatchlist($(this).data());
+                });
+            
+            row.append($('<td>').append(addButton));
+            tbody.append(row);
+        });
+        
+        $('#searchResults').show();
+    }
+    
+    function loadWatchlist() {
+        $.ajax({
+            url: '/api/watchlist',
+            method: 'GET',
+            success: function(response) {
+                if (response.status === 'success') {
+                    displayWatchlist(response.data);
+                } else {
+                    $('#emptyWatchlist').show();
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading watchlist:', xhr);
+                $('#emptyWatchlist').show();
+            }
+        });
+    }
+    
+    function displayWatchlist(items) {
+        const tbody = $('#watchlistBody');
+        tbody.empty();
+        
+        if (items.length === 0) {
+            $('#emptyWatchlist').show();
+            return;
+        }
+        
+        $('#emptyWatchlist').hide();
+        
+        items.forEach(function(item) {
+            const row = $('<tr>');
+            row.append($('<td>').text(item.symbol));
+            row.append($('<td>').text(item.name));
+            row.append($('<td>').text(item.market));
+            row.append($('<td>').text(item.price ? '₹' + item.price.toFixed(2) : 'N/A'));
+            
+            const changeCell = $('<td>');
+            if (item.change) {
+                const changeText = item.change.toFixed(2) + '%';
+                if (item.change > 0) {
+                    changeCell.addClass('text-success').html('<i class="bi bi-arrow-up"></i> ' + changeText);
+                } else if (item.change < 0) {
+                    changeCell.addClass('text-danger').html('<i class="bi bi-arrow-down"></i> ' + changeText);
+                } else {
+                    changeCell.text(changeText);
+                }
+            } else {
+                changeCell.text('N/A');
+            }
+            row.append(changeCell);
+            
+            const actionsCell = $('<td>');
+            
+            const removeButton = $('<button>')
+                .addClass('btn btn-sm btn-danger me-2')
+                .html('<i class="bi bi-trash"></i>')
+                .attr('data-symbol', item.symbol)
+                .click(function() {
+                    removeFromWatchlist($(this).data('symbol'));
+                });
+            
+            const viewButton = $('<button>')
+                .addClass('btn btn-sm btn-primary')
+                .html('<i class="bi bi-graph-up"></i>')
+                .attr('data-symbol', item.symbol)
+                .click(function() {
+                    window.location.href = '/dashboard?symbol=' + $(this).data('symbol');
+                });
+            
+            actionsCell.append(removeButton);
+            actionsCell.append(viewButton);
+            row.append(actionsCell);
+            
+            tbody.append(row);
+        });
+    }
+    
+    function addToWatchlist(data) {
+        $.ajax({
+            url: '/api/watchlist/add',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                symbol: data.symbol,
+                name: data.name,
+                market: data.market
+            }),
+            success: function(response) {
+                if (response.status === 'success') {
+                    showNotification('Symbol Added', `${data.symbol} has been added to your watchlist`, 'success');
+                    loadWatchlist();
+                } else {
+                    showNotification('Error', response.message, 'error');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error adding to watchlist:', xhr);
+                showNotification('Error', 'Failed to add symbol to watchlist', 'error');
+            }
+        });
+    }
+    
+    function removeFromWatchlist(symbol) {
+        if (confirm(`Are you sure you want to remove ${symbol} from your watchlist?`)) {
+            $.ajax({
+                url: '/api/watchlist/remove',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    symbol: symbol
+                }),
+                success: function(response) {
+                    if (response.status === 'success') {
+                        showNotification('Symbol Removed', `${symbol} has been removed from your watchlist`, 'success');
+                        loadWatchlist();
+                    } else {
+                        showNotification('Error', response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error removing from watchlist:', xhr);
+                    showNotification('Error', 'Failed to remove symbol from watchlist', 'error');
+                }
+            });
+        }
+    }
+    
+    function saveWatchlist() {
+        $.ajax({
+            url: '/api/watchlist/save',
+            method: 'POST',
+            success: function(response) {
+                if (response.status === 'success') {
+                    showNotification('Watchlist Saved', 'Your watchlist has been saved successfully', 'success');
+                } else {
+                    showNotification('Error', response.message, 'error');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error saving watchlist:', xhr);
+                showNotification('Error', 'Failed to save watchlist', 'error');
+            }
+        });
+    }
+    
+    function showNotification(title, message, type) {
+        // Create toast container if it doesn't exist
+        if (!$('#toast-container').length) {
+            $('body').append('<div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
+        }
+        
+        const toastId = 'toast-' + Date.now();
+        const toast = `
+            <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-${type === 'success' ? 'success' : 'danger'} text-white">
+                    <strong class="me-auto">${title}</strong>
+                    <small>Just now</small>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        $('#toast-container').append(toast);
+        const toastElement = new bootstrap.Toast(document.getElementById(toastId));
+        toastElement.show();
+    }
+</script>
+{% endblock %}

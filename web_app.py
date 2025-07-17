@@ -22,6 +22,12 @@ os.makedirs('data/raw', exist_ok=True)
 os.makedirs('data/results', exist_ok=True)
 os.makedirs('logs', exist_ok=True)
 
+# Import blueprints
+from apps.symbol_manager import symbol_bp
+
+# Register blueprints
+app.register_blueprint(symbol_bp)
+
 # Mock data for demo
 PORTFOLIO_DATA = {
     'RELIANCE': {'shares': 100, 'avg_price': 2450, 'current_price': 2475, 'pnl': 2500, 'market_value': 247500, 'pnl_pct': 1.02},
