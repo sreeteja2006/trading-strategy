@@ -151,14 +151,23 @@
     });
 
     function loadStockData(symbol) {
+        console.log('Loading data for symbol:', symbol);
+        
+        // Show loading indicator
+        $('#currentPrice').text('Loading...');
+        $('#volume').text('Loading...');
+        
         $.ajax({
-            url: '/api/stock_data/' + symbol,
+            url: '/api/stock_data/' + encodeURIComponent(symbol),
             method: 'GET',
             success: function (data) {
+                console.log('Received data:', data);
                 updateDashboard(data);
             },
-            error: function (error) {
-                console.error('Error loading stock data:', error);
+            error: function (xhr, status, error) {
+                console.error('Error loading stock data:', xhr.responseText);
+                const errorData = xhr.responseJSON || { error: 'Failed to load data' };
+                updateDashboard(errorData);
             }
         });
     }
@@ -196,14 +205,20 @@
     function updateDashboard(data) {
         // Check if there's an error in the data
         if (data.error) {
-            // Show error message
-            alert('Error loading data: ' + data.error);
+            // Show error in the dashboard instead of alert
+            $('#currentPrice').text('Error');
+            $('#volume').text('N/A');
+            $('#priceChange').html('<span class="badge bg-danger">Error</span>');
+            $('#priceChart').html(`<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> ${data.error}</div>`);
+            $('#volumeChart').html(`<div class="alert alert-warning"><i class="bi bi-info-circle"></i> Unable to load volume data</div>`);
+            $('#recentData tbody').html('<tr><td colspan="6" class="text-center text-muted">No data available</td></tr>');
+            console.error('Dashboard error:', data.error);
             return;
         }
 
         try {
             // Update metrics
-            $('#currentPrice').text('₹' + data.current_price.toFixed(2));
+            $('#currentPrice').text('$' + data.current_price.toFixed(2));
             $('#volume').text(data.volume[data.volume.length - 1].toLocaleString());
 
             // Update price change

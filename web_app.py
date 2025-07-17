@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 import json
 import os
 import psutil
+import random
 
 app = Flask(__name__)
 
@@ -159,17 +160,38 @@ def trading():
 def get_stock_data(symbol):
     """API endpoint to get stock data"""
     try:
-        # Don't append .NS if the symbol already has a suffix
-        if '.' in symbol or '^' in symbol or '=' in symbol:
-            ticker_symbol = symbol
-        else:
-            ticker_symbol = f"{symbol}.NS"
-            
-        ticker = yf.Ticker(ticker_symbol)
-        data = ticker.history(period="30d")
+        print(f"Fetching real data for symbol: {symbol}")
         
-        if data.empty:
-            return jsonify({'error': 'No data available'})
+        # Fix for Apple Inc. - ensure we use the correct ticker symbol
+        if "Apple Inc." in symbol and not symbol.endswith(".NS"):
+            symbol = "AAPL"
+        
+        # Use the symbol as-is since it's already properly formatted from the frontend
+        ticker = yf.Ticker(symbol)
+        
+        # Try different periods if 30d doesn't work - use longer periods for more reliable data
+        periods_to_try = ["1y", "6mo", "3mo", "1mo", "5d"]
+        data = None
+        
+        for period in periods_to_try:
+            try:
+                # Use download instead of history for more reliable data fetching
+                data = yf.download(symbol, period=period, progress=False)
+                if not data.empty:
+                    print(f"Successfully fetched data for {symbol} with period {period}")
+                    break
+            except Exception as period_error:
+                print(f"Failed to fetch data for {symbol} with period {period}: {str(period_error)}")
+                continue
+        
+        if data is None or data.empty:
+            return jsonify({'error': f'No data available for {symbol}. Please try a different symbol.'})
+        
+        # Ensure we have at least 2 days of data for change calculation
+        if len(data) < 2:
+            return jsonify({'error': f'Insufficient data for {symbol} (only {len(data)} days available)'})
+        
+        print(f"Data shape for {symbol}: {data.shape}")
         
         # Convert to JSON format
         chart_data = {
@@ -184,9 +206,13 @@ def get_stock_data(symbol):
             'change_pct': float((data['Close'].iloc[-1] - data['Close'].iloc[-2]) / data['Close'].iloc[-2] * 100)
         }
         
+        print(f"Successfully prepared real chart data for {symbol}")
         return jsonify(chart_data)
+        
     except Exception as e:
-        return jsonify({'error': str(e)})
+        error_msg = f"Error fetching data for {symbol}: {str(e)}"
+        print(error_msg)
+        return jsonify({'error': error_msg})
 
 @app.route('/api/execute_trade', methods=['POST'])
 def execute_trade():
