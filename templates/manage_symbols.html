@@ -8,32 +8,53 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-search"></i> Add New Trading Symbols</h5>
+                <button id="downloadStocksBtn" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-cloud-download"></i> Download Stock Lists
+                </button>
             </div>
             <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Search for any stock, index, or commodity from global markets. You
+                    can search by symbol (e.g., AAPL, RELIANCE.NS) or company name.
+                </div>
+
                 <div class="row">
                     <div class="col-md-8">
                         <div class="input-group mb-3">
-                            <input type="text" id="symbolSearch" class="form-control" placeholder="Search for stocks, indices, or commodities (e.g., AAPL, MSFT, ^GSPC)">
+                            <input type="text" id="symbolSearch" class="form-control"
+                                placeholder="Search for any stock, index, or commodity (e.g., AAPL, RELIANCE.NS, Tata)">
                             <button class="btn btn-primary" type="button" id="searchButton">
                                 <i class="bi bi-search"></i> Search
                             </button>
                         </div>
                         <div class="form-text">
-                            Enter stock symbols, company names, or keywords. For international stocks, use exchange codes (e.g., TSLA for Tesla, 0700.HK for Tencent).
+                            <strong>Tips:</strong>
+                            <ul class="mb-0">
+                                <li>For Indian stocks, add ".NS" (NSE) or ".BO" (BSE) suffix: RELIANCE.NS, TCS.BO</li>
+                                <li>For US stocks, use the symbol directly: AAPL, MSFT, GOOGL</li>
+                                <li>For indices, use "^" prefix: ^NSEI (Nifty 50), ^GSPC (S&P 500)</li>
+                                <li>For commodities, use "=F" suffix: GC=F (Gold), CL=F (Crude Oil)</li>
+                            </ul>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <select class="form-select" id="marketSelect">
+                        <select class="form-select mb-3" id="marketSelect">
                             <option value="all">All Markets</option>
                             <option value="stocks">Stocks</option>
                             <option value="indices">Indices</option>
                             <option value="commodities">Commodities</option>
                             <option value="forex">Forex</option>
-                            <option value="crypto">Crypto</option>
+                            <option value="etfs">ETFs</option>
                         </select>
+
+                        <div class="d-grid">
+                            <button id="directAddBtn" class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i> Add Symbol Directly
+                            </button>
+                        </div>
                     </div>
                 </div>
-                
+
                 <div id="searchResults" class="mt-4" style="display: none;">
                     <h6>Search Results</h6>
                     <div class="table-responsive">
@@ -53,11 +74,11 @@
                         </table>
                     </div>
                 </div>
-                
+
                 <div id="noResults" class="alert alert-info mt-4" style="display: none;">
                     No symbols found matching your search criteria.
                 </div>
-                
+
                 <div id="searchError" class="alert alert-danger mt-4" style="display: none;">
                     Error searching for symbols. Please try again.
                 </div>
@@ -93,7 +114,7 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 <div id="emptyWatchlist" class="alert alert-info mt-4" style="display: none;">
                     Your watchlist is empty. Search for symbols above to add them.
                 </div>
@@ -105,131 +126,141 @@
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Load current watchlist
         loadWatchlist();
-        
+
         // Search button click handler
-        $('#searchButton').click(function() {
+        $('#searchButton').click(function () {
             searchSymbols();
         });
-        
+
         // Enter key in search box
-        $('#symbolSearch').keypress(function(e) {
+        $('#symbolSearch').keypress(function (e) {
             if (e.which === 13) {
                 searchSymbols();
             }
         });
-        
+
         // Save watchlist button
-        $('#saveWatchlist').click(function() {
+        $('#saveWatchlist').click(function () {
             saveWatchlist();
         });
+
+        // Download stock lists button
+        $('#downloadStocksBtn').click(function () {
+            downloadStockLists();
+        });
+
+        // Direct add button
+        $('#directAddBtn').click(function () {
+            showDirectAddModal();
+        });
     });
-    
+
     function searchSymbols() {
         const query = $('#symbolSearch').val().trim();
         const market = $('#marketSelect').val();
-        
+
         if (!query) {
             return;
         }
-        
+
         // Show loading indicator
         $('#searchResults').hide();
         $('#noResults').hide();
         $('#searchError').hide();
         $('#searchButton').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...');
-        
+
         // Make API call to search for symbols
         $.ajax({
-            url: '/api/search_symbols',
+            url: '/symbols/api/search_symbols',
             method: 'GET',
             data: {
                 query: query,
                 market: market
             },
-            success: function(response) {
+            success: function (response) {
                 $('#searchButton').html('<i class="bi bi-search"></i> Search');
-                
+
                 if (response.status === 'success' && response.data.length > 0) {
                     displaySearchResults(response.data);
                 } else {
                     $('#noResults').show();
                 }
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 $('#searchButton').html('<i class="bi bi-search"></i> Search');
                 $('#searchError').show();
                 console.error('Error searching symbols:', xhr);
             }
         });
     }
-    
+
     function displaySearchResults(results) {
         const tbody = $('#resultsBody');
         tbody.empty();
-        
-        results.forEach(function(item) {
+
+        results.forEach(function (item) {
             const row = $('<tr>');
             row.append($('<td>').text(item.symbol));
             row.append($('<td>').text(item.name));
             row.append($('<td>').text(item.market));
             row.append($('<td>').text(item.price ? '₹' + item.price.toFixed(2) : 'N/A'));
-            
+
             const addButton = $('<button>')
                 .addClass('btn btn-sm btn-success')
                 .html('<i class="bi bi-plus-circle"></i> Add')
                 .attr('data-symbol', item.symbol)
                 .attr('data-name', item.name)
                 .attr('data-market', item.market)
-                .click(function() {
+                .click(function () {
                     addToWatchlist($(this).data());
                 });
-            
+
             row.append($('<td>').append(addButton));
             tbody.append(row);
         });
-        
+
         $('#searchResults').show();
     }
-    
+
     function loadWatchlist() {
         $.ajax({
-            url: '/api/watchlist',
+            url: '/symbols/api/watchlist',
             method: 'GET',
-            success: function(response) {
+            success: function (response) {
                 if (response.status === 'success') {
                     displayWatchlist(response.data);
                 } else {
                     $('#emptyWatchlist').show();
                 }
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 console.error('Error loading watchlist:', xhr);
                 $('#emptyWatchlist').show();
             }
         });
     }
-    
+
     function displayWatchlist(items) {
         const tbody = $('#watchlistBody');
         tbody.empty();
-        
+
         if (items.length === 0) {
             $('#emptyWatchlist').show();
             return;
         }
-        
+
         $('#emptyWatchlist').hide();
-        
-        items.forEach(function(item) {
+
+        items.forEach(function (item) {
             const row = $('<tr>');
             row.append($('<td>').text(item.symbol));
             row.append($('<td>').text(item.name));
             row.append($('<td>').text(item.market));
             row.append($('<td>').text(item.price ? '₹' + item.price.toFixed(2) : 'N/A'));
-            
+
             const changeCell = $('<td>');
             if (item.change) {
                 const changeText = item.change.toFixed(2) + '%';
@@ -244,36 +275,36 @@
                 changeCell.text('N/A');
             }
             row.append(changeCell);
-            
+
             const actionsCell = $('<td>');
-            
+
             const removeButton = $('<button>')
                 .addClass('btn btn-sm btn-danger me-2')
                 .html('<i class="bi bi-trash"></i>')
                 .attr('data-symbol', item.symbol)
-                .click(function() {
+                .click(function () {
                     removeFromWatchlist($(this).data('symbol'));
                 });
-            
+
             const viewButton = $('<button>')
                 .addClass('btn btn-sm btn-primary')
                 .html('<i class="bi bi-graph-up"></i>')
                 .attr('data-symbol', item.symbol)
-                .click(function() {
+                .click(function () {
                     window.location.href = '/dashboard?symbol=' + $(this).data('symbol');
                 });
-            
+
             actionsCell.append(removeButton);
             actionsCell.append(viewButton);
             row.append(actionsCell);
-            
+
             tbody.append(row);
         });
     }
-    
+
     function addToWatchlist(data) {
         $.ajax({
-            url: '/api/watchlist/add',
+            url: '/symbols/api/watchlist/add',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
@@ -281,7 +312,7 @@
                 name: data.name,
                 market: data.market
             }),
-            success: function(response) {
+            success: function (response) {
                 if (response.status === 'success') {
                     showNotification('Symbol Added', `${data.symbol} has been added to your watchlist`, 'success');
                     loadWatchlist();
@@ -289,23 +320,23 @@
                     showNotification('Error', response.message, 'error');
                 }
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 console.error('Error adding to watchlist:', xhr);
                 showNotification('Error', 'Failed to add symbol to watchlist', 'error');
             }
         });
     }
-    
+
     function removeFromWatchlist(symbol) {
         if (confirm(`Are you sure you want to remove ${symbol} from your watchlist?`)) {
             $.ajax({
-                url: '/api/watchlist/remove',
+                url: '/symbols/api/watchlist/remove',
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
                     symbol: symbol
                 }),
-                success: function(response) {
+                success: function (response) {
                     if (response.status === 'success') {
                         showNotification('Symbol Removed', `${symbol} has been removed from your watchlist`, 'success');
                         loadWatchlist();
@@ -313,38 +344,38 @@
                         showNotification('Error', response.message, 'error');
                     }
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     console.error('Error removing from watchlist:', xhr);
                     showNotification('Error', 'Failed to remove symbol from watchlist', 'error');
                 }
             });
         }
     }
-    
+
     function saveWatchlist() {
         $.ajax({
-            url: '/api/watchlist/save',
+            url: '/symbols/api/watchlist/save',
             method: 'POST',
-            success: function(response) {
+            success: function (response) {
                 if (response.status === 'success') {
                     showNotification('Watchlist Saved', 'Your watchlist has been saved successfully', 'success');
                 } else {
                     showNotification('Error', response.message, 'error');
                 }
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 console.error('Error saving watchlist:', xhr);
                 showNotification('Error', 'Failed to save watchlist', 'error');
             }
         });
     }
-    
+
     function showNotification(title, message, type) {
         // Create toast container if it doesn't exist
         if (!$('#toast-container').length) {
             $('body').append('<div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
         }
-        
+
         const toastId = 'toast-' + Date.now();
         const toast = `
             <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
@@ -358,10 +389,120 @@
                 </div>
             </div>
         `;
-        
+
         $('#toast-container').append(toast);
         const toastElement = new bootstrap.Toast(document.getElementById(toastId));
         toastElement.show();
+    }
+
+    function downloadStockLists() {
+        // Show loading notification
+        showNotification('Downloading', 'Downloading comprehensive stock lists. This may take a moment...', 'success');
+
+        // Make API call to download stock lists
+        $.ajax({
+            url: '/symbols/api/download_stock_lists',
+            method: 'POST',
+            success: function (response) {
+                if (response.status === 'success') {
+                    showNotification('Download Complete', 'Stock lists have been downloaded successfully. You can now search for any stock in the market.', 'success');
+                } else {
+                    showNotification('Error', response.message, 'error');
+                }
+            },
+            error: function (xhr) {
+                console.error('Error downloading stock lists:', xhr);
+                showNotification('Error', 'Failed to download stock lists. Please try again later.', 'error');
+            }
+        });
+    }
+
+    function showDirectAddModal() {
+        // Create modal if it doesn't exist
+        if (!$('#directAddModal').length) {
+            const modalHtml = `
+                <div class="modal fade" id="directAddModal" tabindex="-1" aria-labelledby="directAddModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="directAddModalLabel">Add Symbol Directly</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> Enter the exact symbol you want to add. For example:
+                                    <ul class="mb-0">
+                                        <li>RELIANCE.NS (Reliance Industries on NSE)</li>
+                                        <li>AAPL (Apple Inc on NASDAQ)</li>
+                                        <li>^NSEI (Nifty 50 Index)</li>
+                                        <li>GC=F (Gold Futures)</li>
+                                    </ul>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="directSymbol" class="form-label">Symbol</label>
+                                    <input type="text" class="form-control" id="directSymbol" placeholder="Enter symbol (e.g., RELIANCE.NS, AAPL)">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="directName" class="form-label">Name (Optional)</label>
+                                    <input type="text" class="form-control" id="directName" placeholder="Enter name (e.g., Reliance Industries Ltd)">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="directMarket" class="form-label">Market</label>
+                                    <select class="form-select" id="directMarket">
+                                        <option value="Stocks">Stocks</option>
+                                        <option value="Indices">Indices</option>
+                                        <option value="Commodities">Commodities</option>
+                                        <option value="Forex">Forex</option>
+                                        <option value="ETFs">ETFs</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-success" id="confirmDirectAdd">Add Symbol</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('body').append(modalHtml);
+
+            // Add event listener for the confirm button
+            $('#confirmDirectAdd').click(function () {
+                addDirectSymbol();
+            });
+        }
+
+        // Show the modal
+        const directAddModal = new bootstrap.Modal(document.getElementById('directAddModal'));
+        directAddModal.show();
+    }
+
+    function addDirectSymbol() {
+        const symbol = $('#directSymbol').val().trim();
+        let name = $('#directName').val().trim();
+        const market = $('#directMarket').val();
+
+        if (!symbol) {
+            showNotification('Error', 'Symbol is required', 'error');
+            return;
+        }
+
+        // If name is not provided, use symbol as name
+        if (!name) {
+            name = symbol;
+        }
+
+        // Add to watchlist
+        addToWatchlist({
+            symbol: symbol,
+            name: name,
+            market: market
+        });
+
+        // Hide the modal
+        bootstrap.Modal.getInstance(document.getElementById('directAddModal')).hide();
     }
 </script>
 {% endblock %}
