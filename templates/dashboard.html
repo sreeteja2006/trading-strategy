@@ -10,7 +10,8 @@
             <div>
                 <select id="stockSymbol" class="form-select">
                     {% for symbol in symbols %}
-                    <option value="{{ symbol.symbol }}" {% if symbol.symbol == selected_symbol %}selected{% endif %}>{{ symbol.name }}</option>
+                    <option value="{{ symbol.symbol }}" {% if symbol.symbol==selected_symbol %}selected{% endif %}>{{
+                        symbol.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -131,48 +132,48 @@
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Load initial data for the selected symbol
         const selectedSymbol = $('#stockSymbol').val();
         loadStockData(selectedSymbol);
-        
+
         // Event handlers
-        $('#stockSymbol').change(function() {
+        $('#stockSymbol').change(function () {
             loadStockData($(this).val());
             // Update URL to reflect selected symbol
             const newUrl = updateUrlParameter(window.location.href, 'symbol', $(this).val());
             history.pushState(null, '', newUrl);
         });
-        
-        $('#refreshData').click(function() {
+
+        $('#refreshData').click(function () {
             loadStockData($('#stockSymbol').val());
         });
     });
-    
+
     function loadStockData(symbol) {
         $.ajax({
-            url: '/api/stock_data/' + symbol.replace('.NS', ''),
+            url: '/api/stock_data/' + symbol,
             method: 'GET',
-            success: function(data) {
+            success: function (data) {
                 updateDashboard(data);
             },
-            error: function(error) {
+            error: function (error) {
                 console.error('Error loading stock data:', error);
             }
         });
     }
-    
+
     function updateUrlParameter(url, key, value) {
         // Remove any hash part
         const hashParts = url.split('#');
         let urlWithoutHash = hashParts[0];
         const hash = hashParts.length > 1 ? '#' + hashParts[1] : '';
-        
+
         // Check if the URL already has query parameters
         const existingParams = urlWithoutHash.split('?');
         let baseUrl = existingParams[0];
         let params = existingParams.length > 1 ? existingParams[1].split('&') : [];
-        
+
         // Update or add the new parameter
         let paramFound = false;
         for (let i = 0; i < params.length; i++) {
@@ -183,68 +184,75 @@
                 break;
             }
         }
-        
+
         if (!paramFound) {
             params.push(key + '=' + value);
         }
-        
+
         // Reconstruct the URL
         return baseUrl + (params.length > 0 ? '?' + params.join('&') : '') + hash;
     }
-    
+
     function updateDashboard(data) {
-        // Update metrics
-        $('#currentPrice').text('₹' + data.current_price.toFixed(2));
-        $('#volume').text(data.volume[data.volume.length - 1].toLocaleString());
-        
-        // Update price change
-        const changeClass = data.change >= 0 ? 'bg-success' : 'bg-danger';
-        const changeSign = data.change >= 0 ? '+' : '';
-        $('#priceChange').html(`<span class="badge ${changeClass}">${changeSign}${data.change.toFixed(2)} (${changeSign}${data.change_pct.toFixed(2)}%)</span>`);
-        
-        // Create price chart
-        const trace = {
-            x: data.dates,
-            close: data.close,
-            high: data.high,
-            low: data.low,
-            open: data.open,
-            type: 'candlestick',
-            name: $('#stockSymbol option:selected').text()
-        };
-        
-        const layout = {
-            title: $('#stockSymbol option:selected').text() + ' Price Chart',
-            yaxis: {title: 'Price (₹)'},
-            xaxis: {title: 'Date'},
-            margin: {l: 50, r: 20, t: 40, b: 40}
-        };
-        
-        Plotly.newPlot('priceChart', [trace], layout);
-        
-        // Create volume chart
-        const volumeTrace = {
-            x: data.dates,
-            y: data.volume,
-            type: 'bar',
-            name: 'Volume'
-        };
-        
-        const volumeLayout = {
-            title: 'Trading Volume',
-            yaxis: {title: 'Volume'},
-            xaxis: {title: 'Date'},
-            margin: {l: 50, r: 20, t: 40, b: 40}
-        };
-        
-        Plotly.newPlot('volumeChart', [volumeTrace], volumeLayout);
-        
-        // Update recent data table
-        const tableBody = $('#recentData tbody');
-        tableBody.empty();
-        
-        for (let i = data.dates.length - 10; i < data.dates.length; i++) {
-            tableBody.append(`
+        // Check if there's an error in the data
+        if (data.error) {
+            // Show error message
+            alert('Error loading data: ' + data.error);
+            return;
+        }
+
+        try {
+            // Update metrics
+            $('#currentPrice').text('₹' + data.current_price.toFixed(2));
+            $('#volume').text(data.volume[data.volume.length - 1].toLocaleString());
+
+            // Update price change
+            const changeClass = data.change >= 0 ? 'bg-success' : 'bg-danger';
+            const changeSign = data.change >= 0 ? '+' : '';
+            $('#priceChange').html(`<span class="badge ${changeClass}">${changeSign}${data.change.toFixed(2)} (${changeSign}${data.change_pct.toFixed(2)}%)</span>`);
+
+            const trace = {
+                x: data.dates,
+                close: data.close,
+                high: data.high,
+                low: data.low,
+                open: data.open,
+                type: 'candlestick',
+                name: $('#stockSymbol option:selected').text()
+            };
+
+            const layout = {
+                title: $('#stockSymbol option:selected').text() + ' Price Chart',
+                yaxis: { title: 'Price (₹)' },
+                xaxis: { title: 'Date' },
+                margin: { l: 50, r: 20, t: 40, b: 40 }
+            };
+
+            Plotly.newPlot('priceChart', [trace], layout);
+
+            // Create volume chart
+            const volumeTrace = {
+                x: data.dates,
+                y: data.volume,
+                type: 'bar',
+                name: 'Volume'
+            };
+
+            const volumeLayout = {
+                title: 'Trading Volume',
+                yaxis: { title: 'Volume' },
+                xaxis: { title: 'Date' },
+                margin: { l: 50, r: 20, t: 40, b: 40 }
+            };
+
+            Plotly.newPlot('volumeChart', [volumeTrace], volumeLayout);
+
+            // Update recent data table
+            const tableBody = $('#recentData tbody');
+            tableBody.empty();
+
+            for (let i = data.dates.length - 10; i < data.dates.length; i++) {
+                tableBody.append(`
                 <tr>
                     <td>${data.dates[i]}</td>
                     <td>₹${data.open[i].toFixed(2)}</td>
@@ -254,6 +262,11 @@
                     <td>${data.volume[i].toLocaleString()}</td>
                 </tr>
             `);
+            }
+
+        } catch (error) {
+            console.error('Error updating dashboard:', error);
+            alert('Error updating dashboard. Please try again.');
         }
     }
 </script>

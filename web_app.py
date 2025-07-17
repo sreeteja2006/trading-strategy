@@ -159,7 +159,13 @@ def trading():
 def get_stock_data(symbol):
     """API endpoint to get stock data"""
     try:
-        ticker = yf.Ticker(f"{symbol}.NS")
+        # Don't append .NS if the symbol already has a suffix
+        if '.' in symbol or '^' in symbol or '=' in symbol:
+            ticker_symbol = symbol
+        else:
+            ticker_symbol = f"{symbol}.NS"
+            
+        ticker = yf.Ticker(ticker_symbol)
         data = ticker.history(period="30d")
         
         if data.empty:
