@@ -259,25 +259,10 @@ You can customize:
 - **No Guarantees**: Past performance doesn't predict future results
 - **Trading is Risky**: You can lose money trading stocks
 
-## 🤝 Want to Help?
-
-Contributions are welcome! Here's how:
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b cool-new-feature`)
-3. Commit your changes (`git commit -m 'Add some cool feature'`)
-4. Push to the branch (`git push origin cool-new-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is under the MIT License - see the LICENSE file for details.
-
 ## 📞 Contact
 
-- **GitHub**: [Your GitHub Profile]
-- **Email**: [Your Email]
-- **Website**: [Your Website]
+- **GitHub**: sreeteja2006
+- **Email**: gsreeteja25@gmail.com
 
 ---
 
