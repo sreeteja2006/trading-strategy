@@ -1,236 +1,284 @@
-# 📈 AI-Powered Trading Strategy System
+# 📈 TradePro - Trading Strategy System
 
-> **⚠️ EDUCATIONAL PROJECT ONLY - NOT FOR ACTUAL TRADING**
+> **⚠️ FOR LEARNING ONLY - NOT FOR REAL TRADING**
 
-A comprehensive machine learning-based trading strategy system built with Python, featuring ensemble forecasting models, risk management, and real-time market analysis.
+A trading platform built with Python and Flask that helps you track markets, manage your portfolio, and monitor system performance.
 
-## 🚀 Project Overview
+![TradePro Dashboard](https://img.shields.io/badge/TradePro-Dashboard-blue)
+![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue)
+![Flask](https://img.shields.io/badge/Flask-2.3.3-green)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+![Render](https://img.shields.io/badge/Render-Deployment-purple)
 
-This project demonstrates the complete pipeline of building an automated trading system, from data collection and ML model training to risk management and portfolio optimization. It showcases skills in:
+## 🚀 What is TradePro?
 
-- **Machine Learning**: Prophet, ARIMA, LSTM, Random Forest ensemble models
-- **Financial Analysis**: Technical indicators, risk metrics, portfolio optimization
-- **Software Engineering**: Clean architecture, API integration, real-time systems
-- **Data Visualization**: Interactive dashboards, performance charts
-- **Risk Management**: Position sizing, stop-loss automation, drawdown control
+TradePro is a trading platform I built for traders who want to:
 
-## 🏗️ System Architecture
+- Track stock prices and market trends in real-time
+- Keep an eye on their portfolio performance
+- Execute trades with built-in risk controls
+- Monitor the health of the trading system
+- Use a clean, modern interface that works on any device
+
+The system is designed to be easy to use while still offering powerful features for serious traders.
+
+## 🏗️ How It's Built
+
+The system has three main parts:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Data Layer    │    │   ML Models     │    │  Trading Logic  │
+│   Data Layer    │    │  Business Logic │    │    Web Layer    │
 │                 │    │                 │    │                 │
-│ • Yahoo Finance │───▶│ • Prophet       │───▶│ • Signal Gen    │
-│ • Technical     │    │ • ARIMA         │    │ • Risk Mgmt     │
-│ • Indicators    │    │ • LSTM          │    │ • Position Size │
-│                 │    │ • Random Forest │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Monitoring    │    │   Backtesting   │    │   Reporting     │
-│                 │    │                 │    │                 │
-│ • Real-time     │    │ • Historical    │    │ • Performance   │
-│ • Alerts        │    │ • Walk-forward  │    │ • Risk Metrics  │
-│ • Dashboards    │    │ • Monte Carlo   │    │ • Visualizations│
+│ • Market Data   │───▶│ • Trading Logic │───▶│ • Flask App     │
+│ • User Data     │    │ • Risk Mgmt     │    │ • REST APIs     │
+│ • System Data   │    │ • Analytics     │    │ • Templates     │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## 🛠️ Tech Stack
+I used:
+- **Backend**: Python with Flask
+- **Frontend**: HTML, CSS, JavaScript with Bootstrap
+- **Data**: pandas for analysis, yfinance for market data
+- **Charts**: Plotly.js for interactive visualizations
+- **Monitoring**: psutil for system stats
+- **Deployment**: Docker and Render for easy hosting
+- **Storage**: SQLite database for simplicity
 
-- **Python 3.9+**: Core programming language
-- **Machine Learning**: scikit-learn, TensorFlow, Prophet, statsmodels
-- **Data Processing**: pandas, numpy, yfinance
-- **Visualization**: matplotlib, plotly, streamlit
-- **APIs**: Yahoo Finance, Broker APIs (Zerodha, Upstox)
-- **Deployment**: Docker, Docker Compose
+## 📊 Main Features
 
-## 📊 Key Features
+### 1. Trading Dashboard
+- Live stock price charts
+- Technical indicators like RSI and MACD
+- Volume tracking
+- Price alerts when stocks hit certain levels
 
-### 1. **Multi-Model Ensemble Forecasting**
-- **Prophet**: Time series forecasting with seasonality
-- **ARIMA**: Statistical time series modeling
-- **LSTM**: Deep learning for sequential data
-- **Random Forest**: Ensemble learning for price prediction
+### 2. Performance Dashboard
+- See your portfolio breakdown in a pie chart
+- Track how your investments are doing over time
+- Review your past trades
+- Check key stats like win rate and profit/loss
 
-### 2. **Advanced Risk Management**
-- Position sizing based on volatility
-- Stop-loss and take-profit automation
-- Portfolio diversification limits
-- Maximum drawdown controls
-- Sector exposure limits
+### 3. Trading Interface
+- Place buy and sell orders
+- Manage your open positions
+- Set risk limits to protect your account
+- Get trading signals based on technical analysis
 
-### 3. **Technical Analysis**
-- RSI, MACD, Bollinger Bands
-- Moving averages (SMA, EMA)
-- Volume analysis
-- Support/resistance levels
+### 4. System Status
+- Monitor CPU, memory, and disk usage
+- Check if all services are running properly
+- View system logs if something goes wrong
+- Back up your data with one click
 
-### 4. **Paper Trading System**
-- Virtual portfolio with ₹100,000
-- Real-time market data
-- Transaction history
-- Performance tracking
+### 5. User-Friendly Design
+- Works on phones, tablets, and computers
+- Dark mode for night trading
+- Interactive charts you can zoom and pan
+- Real-time updates without refreshing
+- Customizable layout
 
-### 5. **Interactive Dashboards**
-- Real-time portfolio monitoring
-- Performance analytics
-- Risk metrics visualization
-- Trade execution logs
+## 🧠 Trading Strategies
 
-## 🚀 Quick Start
+TradePro includes several trading strategies you can use:
 
-### Prerequisites
+### Moving Average Strategy
+This strategy buys when a short-term average crosses above a long-term average (golden cross) and sells when it crosses below (death cross). It's simple but effective for trending markets.
+
+### RSI Strategy
+The Relative Strength Index measures if a stock is overbought or oversold. This strategy buys when RSI is below 30 (oversold) and sells when it's above 70 (overbought).
+
+### MACD Strategy
+The Moving Average Convergence Divergence looks at the relationship between two moving averages. It generates buy signals when the MACD line crosses above the signal line and sell signals when it crosses below.
+
+### Bollinger Bands Strategy
+This uses a moving average with upper and lower bands that are 2 standard deviations away. It buys when price touches the lower band (potential support) and sells when it touches the upper band (potential resistance).
+
+## 🚀 Getting Started
+
+### What You Need
 ```bash
-python 3.9+
-Docker & Docker Compose (for 24/7 website)
+Python 3.9 or newer
+Docker (optional, for container deployment)
 ```
 
-### Installation
+### Local Setup
 ```bash
-git clone https://github.com/yourusername/trading-strategy-system
-cd trading-strategy-system
+# Clone the repository
+git clone https://github.com/yourusername/tradepro
+cd tradepro
+
+# Set up Python environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install required packages
 pip install -r requirements.txt
+
+# Run the app
+python web_app.py
+
+# Open your browser to http://localhost:5000
 ```
 
-### Run Individual Components
+### Docker Setup
 ```bash
-# 1. Run paper trading demo
-python scripts/paper_trading.py
+# Build and run with Docker
+docker build -t tradepro .
+docker run -p 5000:5000 tradepro
 
-# 2. Launch performance dashboard
-streamlit run apps/performance_dashboard.py
-
-# 3. Test trading strategy
-python scripts/run_strategy.py
-
-# 4. Run risk management demo
-python src/risk/risk_manager.py
+# Or use Docker Compose for an even easier setup
+docker-compose up -d
 ```
 
-### Run 24/7 Web Interface
+### Render Deployment
+The app is ready to deploy on Render using the included `render.yaml` file.
+
+## 📊 What's Inside
+
+```
+tradepro/
+├── apps/                      # Main app modules
+│   ├── dashboard.py           # Trading dashboard
+│   ├── main.py                # Main router
+│   ├── performance_dashboard.py # Performance tracking
+│   ├── system_status.py       # System monitoring
+│   └── trading_interface.py   # Trading execution
+├── config/                    # Settings files
+│   ├── risk_config.json       # Risk management settings
+│   └── trading_config.json    # Trading parameters
+├── data/                      # Data storage
+├── static/                    # Web assets (CSS, JS)
+├── templates/                 # HTML templates
+├── app.py                     # Flask app setup
+├── Dockerfile                 # Docker config
+├── requirements.txt           # Python dependencies
+└── web_app.py                 # Main entry point
+```
+
+## 🖥️ What You'll See
+
+### Home Screen
+- Overview of your portfolio
+- Quick links to all features
+- Recent activity feed
+- Market alerts
+- Upcoming market events
+
+### Trading Dashboard
+- Real-time price charts
+- Technical indicators
+- Buy/sell signals
+- Market news
+
+### Performance Dashboard
+- Portfolio breakdown
+- Performance charts
+- Position details
+- Trade history
+- Strategy stats
+
+### System Status
+- CPU, memory, and disk usage
+- Service health indicators
+- System logs
+- Backup tools
+
+## ⚙️ Settings You Can Change
+
+### Trading Settings (config/trading_config.json)
+```json
+{
+  "symbols": ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK"],
+  "max_positions": 5,
+  "position_size_pct": 0.1,
+  "stop_loss_pct": 0.05,
+  "take_profit_pct": 0.15,
+  "daily_loss_limit": 0.02,
+  "max_trades_per_day": 10
+}
+```
+
+### Risk Settings (config/risk_config.json)
+```json
+{
+  "max_portfolio_risk": 0.02,
+  "max_position_size_pct": 0.2,
+  "correlation_threshold": 0.7,
+  "max_sector_exposure": 0.3,
+  "volatility_threshold": 0.25
+}
+```
+
+## 🔒 Security Features
+
+- HTTPS support for secure connections
+- User authentication
+- Input validation
+- Protection against common web attacks
+- Secure API endpoints
+
+## 🧪 Testing
+
 ```bash
-# Start the complete web interface with Docker
-./scripts/start_website.sh
-
-# Access the website at http://localhost:8501
+# Run tests
+python -m unittest discover tests
 ```
 
-## 📈 Sample Results
+## 📱 Works on All Devices
 
-### Strategy Performance
-- **Total Return**: +12.5% (6 months backtest)
-- **Sharpe Ratio**: 1.45
-- **Maximum Drawdown**: -3.2%
-- **Win Rate**: 65%
+TradePro works great on:
+- Desktop computers
+- Laptops
+- Tablets
+- Mobile phones
 
-### Risk Metrics
-- **VaR (95%)**: -1.8%
-- **Beta**: 0.85
-- **Alpha**: 2.3%
-- **Information Ratio**: 1.2
+The interface automatically adjusts to fit your screen size.
 
-## 🔧 Configuration
+## 🌙 Dark Mode
 
-### Trading Parameters
-```python
-# Risk Management
-MAX_POSITION_SIZE = 0.1      # 10% per position
-STOP_LOSS = 0.05             # 5% stop loss
-TAKE_PROFIT = 0.15           # 15% take profit
-MAX_DAILY_LOSS = 0.02        # 2% daily loss limit
+TradePro includes a dark mode that:
+- Is easier on your eyes during night trading
+- Saves battery on phones and tablets
+- Looks modern and professional
+- Remembers your preference
 
-# Strategy Parameters
-SIGNAL_THRESHOLD = 0.02      # 2% price movement threshold
-RSI_OVERSOLD = 30           # RSI oversold level
-RSI_OVERBOUGHT = 70         # RSI overbought level
-```
+## 🔧 Make It Your Own
 
-## 📊 Project Structure
+You can customize:
+- Dashboard layout
+- Chart types and indicators
+- Color themes
+- Alert settings
+- Data refresh timing
 
-```
-trading-strategy-system/
-├── scripts/
-│   ├── main.py                 # Main strategy execution
-│   ├── extract_data.py         # Data collection
-│   ├── preprocessing.py        # Data preprocessing
-│   ├── prophet_model.py        # Prophet forecasting
-│   ├── arima_model.py         # ARIMA modeling
-│   ├── lstm_model.py          # LSTM neural network
-│   ├── rf_model.py            # Random Forest
-│   ├── strategy.py            # Trading signals
-│   ├── backtester.py          # Backtesting engine
-│   └── reporting.py           # Report generation
-├── paper_trading.py           # Virtual trading system
-├── risk_management.py         # Risk controls
-├── broker_integration.py      # API integrations
-├── dashboard.py              # Streamlit dashboard
-├── requirements.txt          # Dependencies
-├── Dockerfile               # Container setup
-├── docker-compose.yml       # Multi-container setup
-└── README.md               # This file
-```
+## ⚠️ Important Notes
 
-## 🧪 Testing & Validation
+- **For Learning Only**: This project is for education and practice
+- **Not Financial Advice**: Don't use for real trading decisions
+- **No Guarantees**: Past performance doesn't predict future results
+- **Trading is Risky**: You can lose money trading stocks
 
-### Backtesting Results
-- **Period**: 2023-01-01 to 2024-12-31
-- **Symbols**: RELIANCE.NS, TCS.NS, INFY.NS, HDFCBANK.NS
-- **Initial Capital**: ₹100,000
-- **Final Value**: ₹112,500
-- **Total Trades**: 45
+## 🤝 Want to Help?
 
-### Model Performance
-| Model | Accuracy | RMSE | MAE |
-|-------|----------|------|-----|
-| Prophet | 68.5% | 12.3 | 8.7 |
-| ARIMA | 62.1% | 15.8 | 11.2 |
-| LSTM | 71.2% | 10.9 | 7.4 |
-| Random Forest | 69.8% | 11.5 | 8.1 |
-| **Ensemble** | **73.4%** | **9.8** | **6.9** |
+Contributions are welcome! Here's how:
 
-## 🎯 Key Learning Outcomes
-
-### Technical Skills Demonstrated
-1. **Machine Learning Pipeline**: Data preprocessing, model training, ensemble methods
-2. **Financial Engineering**: Risk management, portfolio optimization, backtesting
-3. **Software Architecture**: Modular design, API integration, real-time systems
-4. **Data Visualization**: Interactive dashboards, performance charts
-5. **DevOps**: Containerization, deployment, monitoring
-
-### Business Understanding
-1. **Risk Management**: Understanding of financial risk and mitigation strategies
-2. **Market Analysis**: Technical and fundamental analysis concepts
-3. **Portfolio Theory**: Diversification, correlation, risk-return optimization
-4. **Regulatory Awareness**: Trading regulations and compliance considerations
-
-## 🚨 Disclaimers
-
-- **Educational Purpose Only**: This project is for learning and demonstration
-- **Not Financial Advice**: Do not use for actual trading decisions
-- **No Guarantees**: Past performance does not predict future results
-- **Risk Warning**: Trading involves substantial risk of loss
-
-## 🤝 Contributing
-
-This is an educational project. Feel free to:
-- Fork and experiment
-- Suggest improvements
-- Report issues
-- Add new features
+1. Fork the repository
+2. Create your feature branch (`git checkout -b cool-new-feature`)
+3. Commit your changes (`git commit -m 'Add some cool feature'`)
+4. Push to the branch (`git push origin cool-new-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-MIT License - See LICENSE file for details
+This project is under the MIT License - see the LICENSE file for details.
 
 ## 📞 Contact
 
-- **LinkedIn**: [Your LinkedIn Profile]
 - **GitHub**: [Your GitHub Profile]
 - **Email**: [Your Email]
+- **Website**: [Your Website]
 
 ---
 
-**Built with ❤️ for learning and demonstration purposes**
+**Built with ❤️ using Python, Flask, and modern web tools**
