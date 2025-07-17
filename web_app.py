@@ -11,8 +11,16 @@ import yfinance as yf
 from datetime import datetime, timedelta
 import json
 import os
+import psutil
 
 app = Flask(__name__)
+
+# Create necessary directories
+os.makedirs('data', exist_ok=True)
+os.makedirs('data/processed', exist_ok=True)
+os.makedirs('data/raw', exist_ok=True)
+os.makedirs('data/results', exist_ok=True)
+os.makedirs('logs', exist_ok=True)
 
 # Mock data for demo
 PORTFOLIO_DATA = {
@@ -24,7 +32,7 @@ PORTFOLIO_DATA = {
 @app.route('/')
 def home():
     """Home page with system overview"""
-    total_value = sum(pos['shares'] * pos['current_price'] for pos in PORTFOLIO_DATA.values())
+    total_value = sum(pos['market_value'] for pos in PORTFOLIO_DATA.values())
     total_pnl = sum(pos['pnl'] for pos in PORTFOLIO_DATA.values())
     
     stats = {
@@ -56,6 +64,50 @@ def performance():
     }
     
     return render_template('performance.html', summary=summary)
+
+@app.route('/system')
+def system():
+    """System status dashboard"""
+    # Get system metrics
+    metrics = {
+        "cpu_percent": psutil.cpu_percent(),
+        "memory_percent": psutil.virtual_memory().percent,
+        "disk_percent": psutil.disk_usage('/').percent,
+        "boot_time": datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S"),
+        "uptime_hours": (datetime.now() - datetime.fromtimestamp(psutil.boot_time())).total_seconds() / 3600
+    }
+    
+    # Mock resource data
+    timestamps = [datetime.now() - timedelta(minutes=i*5) for i in range(12)]
+    timestamps.reverse()
+    
+    cpu_values = [metrics['cpu_percent'] - 10 + i*2 for i in range(12)]
+    cpu_values = [max(0, min(100, x)) for x in cpu_values]
+    
+    memory_values = [metrics['memory_percent'] - 5 + i for i in range(12)]
+    memory_values = [max(0, min(100, x)) for x in memory_values]
+    
+    resource_data = {
+        'timestamps': [t.strftime('%H:%M') for t in timestamps],
+        'cpu': cpu_values,
+        'memory': memory_values
+    }
+    
+    # Mock services
+    services = {
+        'web': True,
+        'data': True,
+        'trading': True
+    }
+    
+    return render_template(
+        'system.html',
+        metrics=metrics,
+        resource_data=json.dumps(resource_data),
+        containers=[],
+        services=services,
+        last_updated=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
 
 @app.route('/trading')
 def trading():
@@ -115,17 +167,14 @@ def get_portfolio():
     """API endpoint to get portfolio data"""
     portfolio_list = []
     for symbol, pos in PORTFOLIO_DATA.items():
-        market_value = pos['shares'] * pos['current_price']
-        pnl_pct = (pos['pnl'] / (pos['shares'] * pos['avg_price'])) * 100
-        
         portfolio_list.append({
             'symbol': symbol,
             'shares': pos['shares'],
             'avg_price': pos['avg_price'],
             'current_price': pos['current_price'],
-            'market_value': market_value,
+            'market_value': pos['market_value'],
             'pnl': pos['pnl'],
-            'pnl_pct': pnl_pct
+            'pnl_pct': pos['pnl_pct']
         })
     
     return jsonify(portfolio_list)
@@ -133,8 +182,6 @@ def get_portfolio():
 @app.route('/api/system_status')
 def system_status():
     """API endpoint for system status"""
-    import psutil
-    
     status = {
         'timestamp': datetime.now().isoformat(),
         'status': 'online',
@@ -145,6 +192,39 @@ def system_status():
     }
     
     return jsonify(status)
+
+@app.route('/system/api/logs')
+def get_logs():
+    """API endpoint to get logs"""
+    service = request.args.get('service', 'all')
+    lines = request.args.get('lines', 10, type=int)
+    
+    # Mock log data
+    log_data = f"Sample log data for {service}\n"
+    log_data += "2025-07-17 10:15:23 INFO  Server started\n"
+    log_data += "2025-07-17 10:15:24 INFO  Connected to database\n"
+    log_data += "2025-07-17 10:15:25 INFO  Loaded configuration\n"
+    log_data += "2025-07-17 10:16:30 INFO  User login: admin\n"
+    log_data += "2025-07-17 10:17:45 INFO  API request: /api/portfolio\n"
+    
+    return jsonify({'status': 'success', 'logs': log_data})
+
+@app.route('/system/api/restart', methods=['POST'])
+def restart_services():
+    """API endpoint to restart services"""
+    return jsonify({'status': 'success', 'message': 'Services restarted successfully'})
+
+@app.route('/system/api/backup', methods=['POST'])
+def create_backup():
+    """API endpoint to create a backup"""
+    backup_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_file = f"backup_{backup_time}.tar.gz"
+    
+    return jsonify({
+        'status': 'success', 
+        'message': f'Backup created: {backup_file}',
+        'file': backup_file
+    })
 
 @app.route('/health')
 def health_check():

@@ -1,60 +1,88 @@
 {% extends "base.html" %}
 
-{% block title %}Trading System - Home{% endblock %}
+{% block title %}TradePro - Home{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row mb-4">
     <div class="col-12">
-        <h1 class="mb-4">Trading Strategy System</h1>
-        <p class="lead">Welcome to your all-in-one trading strategy platform</p>
+        <div class="card bg-primary text-white">
+            <div class="card-body p-5">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="display-4 fw-bold animate__animated animate__fadeInUp">Welcome to TradePro</h1>
+                        <p class="lead animate__animated animate__fadeInUp animate__delay-1s">Your advanced trading
+                            strategy platform for professional traders</p>
+                        <div class="mt-4 animate__animated animate__fadeInUp animate__delay-2s">
+                            <a href="/dashboard" class="btn btn-light btn-lg me-2">
+                                <i class="bi bi-graph-up-arrow"></i> View Dashboard
+                            </a>
+                            <a href="/trading" class="btn btn-outline-light btn-lg">
+                                <i class="bi bi-currency-exchange"></i> Start Trading
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-none d-md-block">
+                        <div class="text-center">
+                            <i class="bi bi-graph-up-arrow" style="font-size: 8rem; opacity: 0.5;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h5 class="card-title">Portfolio Value</h5>
-                <h2 class="card-text">₹{{ "{:,.2f}".format(stats.portfolio_value) }}</h2>
-                <p class="card-text">
-                    <small>
+        <div class="card h-100 dashboard-card">
+            <div class="card-body text-center">
+                <div class="display-4 fw-bold text-primary mb-2">₹{{ "{:,.0f}".format(stats.portfolio_value) }}</div>
+                <h5 class="text-muted">Portfolio Value</h5>
+                <div class="mt-3">
+                    <span class="badge bg-success">
                         <i class="bi bi-arrow-up-right"></i>
-                        ₹{{ "{:+,.2f}".format(stats.total_pnl) }}
-                    </small>
-                </p>
+                        ₹{{ "{:+,.0f}".format(stats.total_pnl) }}
+                    </span>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title">Cash Balance</h5>
-                <h2 class="card-text">₹{{ "{:,.2f}".format(stats.cash_balance) }}</h2>
-                <p class="card-text">
-                    <small>Available for trading</small>
-                </p>
+        <div class="card h-100 dashboard-card">
+            <div class="card-body text-center">
+                <div class="display-4 fw-bold text-success mb-2">₹{{ "{:,.0f}".format(stats.cash_balance) }}</div>
+                <h5 class="text-muted">Cash Balance</h5>
+                <div class="mt-3">
+                    <span class="badge bg-light text-dark">
+                        Available for trading
+                    </span>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <h5 class="card-title">Today's Trades</h5>
-                <h2 class="card-text">{{ stats.today_trades }}</h2>
-                <p class="card-text">
-                    <small>Orders executed today</small>
-                </p>
+        <div class="card h-100 dashboard-card">
+            <div class="card-body text-center">
+                <div class="display-4 fw-bold text-info mb-2">{{ stats.today_trades }}</div>
+                <h5 class="text-muted">Today's Trades</h5>
+                <div class="mt-3">
+                    <span class="badge bg-light text-dark">
+                        Orders executed today
+                    </span>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-secondary">
-            <div class="card-body">
-                <h5 class="card-title">System Uptime</h5>
-                <h2 class="card-text">{{ stats.system_uptime }}</h2>
-                <p class="card-text">
-                    <small>Continuous operation</small>
-                </p>
+        <div class="card h-100 dashboard-card">
+            <div class="card-body text-center">
+                <div class="display-4 fw-bold text-secondary mb-2">{{ stats.system_uptime }}</div>
+                <h5 class="text-muted">System Uptime</h5>
+                <div class="mt-3">
+                    <span class="badge bg-success">
+                        <i class="bi bi-check-circle"></i> Operational
+                    </span>
+                </div>
             </div>
         </div>
     </div>
@@ -62,94 +90,227 @@
 
 <div class="row mb-4">
     <div class="col-12">
-        <h3>Available Applications</h3>
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-grid-3x3-gap"></i> Quick Access</h5>
+                <button class="btn btn-sm btn-outline-primary">Customize</button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100 dashboard-card">
+                            <div class="card-body text-center p-4">
+                                <div class="icon-circle bg-primary text-white mb-3">
+                                    <i class="bi bi-graph-up-arrow"></i>
+                                </div>
+                                <h5>Trading Dashboard</h5>
+                                <p class="text-muted">Monitor real-time market data and technical indicators</p>
+                                <a href="/dashboard" class="btn btn-sm btn-primary w-100">Launch</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100 dashboard-card">
+                            <div class="card-body text-center p-4">
+                                <div class="icon-circle bg-success text-white mb-3">
+                                    <i class="bi bi-bar-chart-fill"></i>
+                                </div>
+                                <h5>Performance</h5>
+                                <p class="text-muted">Track your trading strategy results and portfolio performance</p>
+                                <a href="/performance" class="btn btn-sm btn-success w-100">Launch</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100 dashboard-card">
+                            <div class="card-body text-center p-4">
+                                <div class="icon-circle bg-danger text-white mb-3">
+                                    <i class="bi bi-currency-exchange"></i>
+                                </div>
+                                <h5>Trading Interface</h5>
+                                <p class="text-muted">Execute trades and manage your trading strategy</p>
+                                <a href="/trading" class="btn btn-sm btn-danger w-100">Launch</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100 dashboard-card">
+                            <div class="card-body text-center p-4">
+                                <div class="icon-circle bg-info text-white mb-3">
+                                    <i class="bi bi-gear-fill"></i>
+                                </div>
+                                <h5>System Status</h5>
+                                <p class="text-muted">Monitor system health, resources, and container status</p>
+                                <a href="/system" class="btn btn-sm btn-info w-100">Launch</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 mb-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-graph-up text-primary"></i>
-                    Trading Dashboard
-                </h5>
-                <p class="card-text">Monitor real-time market data and technical indicators</p>
-                <a href="/dashboard" class="btn btn-primary">Launch</a>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-activity"></i> Recent Activity</h5>
+                <a href="#" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item p-3">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-success me-2">BUY</span>
+                                <strong>Buy signal generated for RELIANCE</strong>
+                                <p class="text-muted mb-0 small">RSI oversold condition detected with high volume</p>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-light text-dark">10:15 AM</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item p-3">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-success me-2">BUY</span>
+                                <strong>Executed buy order: 5 RELIANCE @ ₹2,450.75</strong>
+                                <p class="text-muted mb-0 small">Order executed successfully</p>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-light text-dark">10:30 AM</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item p-3">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-info me-2">INFO</span>
+                                <strong>Portfolio rebalanced</strong>
+                                <p class="text-muted mb-0 small">Adjusted position sizes based on risk parameters</p>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-light text-dark">11:45 AM</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item p-3">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-danger me-2">SELL</span>
+                                <strong>Sell signal generated for TCS</strong>
+                                <p class="text-muted mb-0 small">RSI overbought condition detected</p>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-light text-dark">01:30 PM</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <a href="#" class="text-decoration-none">Load more activities</a>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-cash-coin text-success"></i>
-                    Performance Dashboard
-                </h5>
-                <p class="card-text">Track your trading strategy results and portfolio performance</p>
-                <a href="/performance" class="btn btn-success">Launch</a>
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bell"></i> Alerts</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <span class="badge rounded-pill bg-danger p-2"><i
+                                        class="bi bi-exclamation-triangle"></i></span>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">INFY approaching stop loss</h6>
+                                <small class="text-muted">2 minutes ago</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <span class="badge rounded-pill bg-success p-2"><i
+                                        class="bi bi-check-circle"></i></span>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">TCS reached take profit target</h6>
+                                <small class="text-muted">15 minutes ago</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <span class="badge rounded-pill bg-warning p-2"><i class="bi bi-info-circle"></i></span>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">Market volatility increasing</h6>
+                                <small class="text-muted">1 hour ago</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3 mb-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-currency-exchange text-danger"></i>
-                    Trading Interface
-                </h5>
-                <p class="card-text">Execute trades and manage your trading strategy</p>
-                <a href="/trading" class="btn btn-danger">Launch</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-pc-display text-info"></i>
-                    System Status
-                </h5>
-                <p class="card-text">Monitor system health, resources, and container status</p>
-                <a href="/system" class="btn btn-info">Launch</a>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row mt-4">
-    <div class="col-12">
-        <h3>Recent Activity</h3>
-        <div class="list-group">
-            <div class="list-group-item">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">Buy signal generated for RELIANCE</h5>
-                    <small>10:15 AM</small>
-                </div>
-                <p class="mb-1">RSI oversold condition detected with high volume</p>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Market Events</h5>
             </div>
-            <div class="list-group-item">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">Executed buy order: 5 RELIANCE @ ₹2,450.75</h5>
-                    <small>10:30 AM</small>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h6 class="mb-0">RBI Policy Announcement</h6>
+                        <small class="text-muted">July 18, 2025</small>
+                    </div>
+                    <span class="badge bg-primary">Tomorrow</span>
                 </div>
-                <p class="mb-1">Order executed successfully</p>
-            </div>
-            <div class="list-group-item">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">Portfolio rebalanced</h5>
-                    <small>11:45 AM</small>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h6 class="mb-0">TCS Quarterly Results</h6>
+                        <small class="text-muted">July 20, 2025</small>
+                    </div>
+                    <span class="badge bg-secondary">3 days</span>
                 </div>
-                <p class="mb-1">Adjusted position sizes based on risk parameters</p>
-            </div>
-            <div class="list-group-item">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">Sell signal generated for TCS</h5>
-                    <small>01:30 PM</small>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">GDP Data Release</h6>
+                        <small class="text-muted">July 25, 2025</small>
+                    </div>
+                    <span class="badge bg-secondary">8 days</span>
                 </div>
-                <p class="mb-1">RSI overbought condition detected</p>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .icon-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+
+    .icon-circle i {
+        font-size: 1.8rem;
+    }
+
+    .list-group-item:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+</style>
 {% endblock %}
