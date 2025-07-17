@@ -16,9 +16,9 @@ app = Flask(__name__)
 
 # Mock data for demo
 PORTFOLIO_DATA = {
-    'RELIANCE': {'shares': 100, 'avg_price': 2450, 'current_price': 2475, 'pnl': 2500},
-    'TCS': {'shares': 50, 'avg_price': 3500, 'current_price': 3560, 'pnl': 3000},
-    'INFY': {'shares': 200, 'avg_price': 1800, 'current_price': 1825, 'pnl': 5000}
+    'RELIANCE': {'shares': 100, 'avg_price': 2450, 'current_price': 2475, 'pnl': 2500, 'market_value': 247500, 'pnl_pct': 1.02},
+    'TCS': {'shares': 50, 'avg_price': 3500, 'current_price': 3560, 'pnl': 3000, 'market_value': 178000, 'pnl_pct': 1.71},
+    'INFY': {'shares': 200, 'avg_price': 1800, 'current_price': 1825, 'pnl': 5000, 'market_value': 365000, 'pnl_pct': 1.39}
 }
 
 @app.route('/')
@@ -145,6 +145,11 @@ def system_status():
     }
     
     return jsonify(status)
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Render"""
+    return jsonify({'status': 'healthy'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
