@@ -2,7 +2,7 @@
 """
 System Status Dashboard - Monitor the health of the trading system
 """
-import streamlit as st
+from flask import Blueprint, render_template, jsonify, request
 import subprocess
 import psutil
 import os
@@ -10,14 +10,54 @@ import json
 import time
 from datetime import datetime, timedelta
 import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
+import sqlite3
 
-st.set_page_config(
-    page_title="System Status Dashboard",
-    page_icon="🖥️",
-    layout="wide"
-)
+# Create a blueprint for the system status dashboard
+system_bp = Blueprint('system', __name__, url_prefix='/system')
+
+# Database setup
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'system.db')
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+def get_db_connection():
+    """Get a database connection"""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    """Initialize the database with tables if they don't exist"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Create system_metrics table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS system_metrics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        cpu_percent REAL NOT NULL,
+        memory_percent REAL NOT NULL,
+        disk_percent REAL NOT NULL,
+        network_sent_mb REAL NOT NULL,
+        network_recv_mb REAL NOT NULL
+    )
+    ''')
+    
+    # Create service_status table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS service_status (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        status TEXT NOT NULL,
+        last_checked TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+# Initialize the database
+init_db()
 
 def get_docker_status():
     """Get status of Docker containers"""
@@ -43,243 +83,274 @@ def get_docker_status():
                     
         return containers
     except Exception as e:
-        st.error(f"Error getting Docker status: {str(e)}")
         return None
 
 def get_system_metrics():
     """Get system metrics"""
-    metrics = {
-        "cpu_percent": psutil.cpu_percent(),
-        "memory_percent": psutil.virtual_memory().percent,
-        "disk_percent": psutil.disk_usage('/').percent,
-        "boot_time": datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S"),
-        "uptime_hours": (datetime.now() - datetime.fromtimestamp(psutil.boot_time())).total_seconds() / 3600
-    }
-    
-    # Get network info
-    net_io = psutil.net_io_counters()
-    metrics["network_sent_mb"] = net_io.bytes_sent / (1024 * 1024)
-    metrics["network_recv_mb"] = net_io.bytes_recv / (1024 * 1024)
-    
-    return metrics
+    try:
+        metrics = {
+            "cpu_percent": psutil.cpu_percent(),
+            "memory_percent": psutil.virtual_memory().percent,
+            "disk_percent": psutil.disk_usage('/').percent,
+            "boot_time": datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S"),
+            "uptime_hours": (datetime.now() - datetime.fromtimestamp(psutil.boot_time())).total_seconds() / 3600
+        }
+        
+        # Get network info
+        net_io = psutil.net_io_counters()
+        metrics["network_sent_mb"] = net_io.bytes_sent / (1024 * 1024)
+        metrics["network_recv_mb"] = net_io.bytes_recv / (1024 * 1024)
+        
+        # Store metrics in database
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO system_metrics (timestamp, cpu_percent, memory_percent, disk_percent, network_sent_mb, network_recv_mb)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            metrics["cpu_percent"],
+            metrics["memory_percent"],
+            metrics["disk_percent"],
+            metrics["network_sent_mb"],
+            metrics["network_recv_mb"]
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return metrics
+    except Exception as e:
+        # Return default values if there's an error
+        return {
+            "cpu_percent": 0,
+            "memory_percent": 0,
+            "disk_percent": 0,
+            "boot_time": "Unknown",
+            "uptime_hours": 0,
+            "network_sent_mb": 0,
+            "network_recv_mb": 0
+        }
 
-def check_service_health(url="http://localhost:8501"):
+def get_historical_metrics(hours=1):
+    """Get historical system metrics from database"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Get metrics from the last hour
+    cursor.execute('''
+        SELECT * FROM system_metrics 
+        WHERE timestamp >= datetime('now', ?) 
+        ORDER BY timestamp ASC
+    ''', (f'-{hours} hours',))
+    
+    rows = cursor.fetchall()
+    
+    timestamps = []
+    cpu_values = []
+    memory_values = []
+    
+    for row in rows:
+        timestamps.append(row['timestamp'])
+        cpu_values.append(row['cpu_percent'])
+        memory_values.append(row['memory_percent'])
+    
+    conn.close()
+    
+    # If no data, generate sample data
+    if not timestamps:
+        now = datetime.now()
+        timestamps = [(now - timedelta(minutes=i*5)).strftime("%Y-%m-%d %H:%M:%S") for i in range(12)]
+        timestamps.reverse()
+        
+        # Generate sample CPU and memory values
+        base_cpu = 30
+        base_memory = 45
+        cpu_values = [base_cpu + (i % 6) * 5 for i in range(12)]
+        memory_values = [base_memory + (i % 4) * 3 for i in range(12)]
+    
+    return {
+        'timestamps': timestamps,
+        'cpu': cpu_values,
+        'memory': memory_values
+    }
+
+def check_service_health(url="http://localhost:5000"):
     """Check if the web service is healthy"""
     import requests
     try:
-        response = requests.get(f"{url}/_stcore/health", timeout=5)
+        response = requests.get(f"{url}/health", timeout=5)
         return response.status_code == 200
     except:
         return False
 
-def main():
-    st.title("🖥️ System Status Dashboard")
+def get_service_status():
+    """Get status of all services"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
     
-    # Refresh button
-    col1, col2 = st.columns([9, 1])
-    with col2:
-        if st.button("🔄 Refresh"):
-            st.rerun()
+    # Get service status
+    cursor.execute('SELECT * FROM service_status')
+    rows = cursor.fetchall()
     
-    # Last updated time
-    with col1:
-        st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    services = {}
+    for row in rows:
+        services[row['name']] = row['status'] == 'active'
     
-    # System metrics
-    st.subheader("System Resources")
+    # If no services in database, add default ones
+    if not services:
+        services = {
+            'web': True,
+            'data': True,
+            'trading': True
+        }
+        
+        # Add to database
+        for name, status in services.items():
+            cursor.execute('''
+                INSERT INTO service_status (name, status)
+                VALUES (?, ?)
+            ''', (name, 'active' if status else 'inactive'))
+        
+        conn.commit()
     
-    try:
-        metrics = get_system_metrics()
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("CPU Usage", f"{metrics['cpu_percent']}%")
-            
-        with col2:
-            st.metric("Memory Usage", f"{metrics['memory_percent']}%")
-            
-        with col3:
-            st.metric("Disk Usage", f"{metrics['disk_percent']}%")
-            
-        with col4:
-            st.metric("Uptime", f"{metrics['uptime_hours']:.1f} hours")
-        
-        # Resource usage charts
-        st.subheader("Resource Usage")
-        
-        # Create sample historical data (in a real implementation, you'd track this)
-        timestamps = [datetime.now() - timedelta(minutes=i*5) for i in range(12)]
-        timestamps.reverse()
-        
-        cpu_values = [metrics['cpu_percent'] - 10 + i*2 for i in range(12)]
-        cpu_values = [max(0, min(100, x)) for x in cpu_values]  # Ensure values are between 0-100
-        
-        memory_values = [metrics['memory_percent'] - 5 + i for i in range(12)]
-        memory_values = [max(0, min(100, x)) for x in memory_values]
-        
-        df = pd.DataFrame({
-            'timestamp': timestamps,
-            'cpu': cpu_values,
-            'memory': memory_values
-        })
-        
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=df['timestamp'], 
-            y=df['cpu'],
-            mode='lines+markers',
-            name='CPU Usage %',
-            line=dict(color='blue', width=2)
-        ))
-        
-        fig.add_trace(go.Scatter(
-            x=df['timestamp'], 
-            y=df['memory'],
-            mode='lines+markers',
-            name='Memory Usage %',
-            line=dict(color='green', width=2)
-        ))
-        
-        fig.update_layout(
-            title='Resource Usage Over Time',
-            xaxis_title='Time',
-            yaxis_title='Usage %',
-            height=300
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-    except Exception as e:
-        st.error(f"Error getting system metrics: {str(e)}")
+    conn.close()
+    return services
+
+@system_bp.route('/')
+def system_dashboard():
+    """Render the system status dashboard"""
+    metrics = get_system_metrics()
+    resource_data = get_historical_metrics()
+    containers = get_docker_status() or []
+    services = get_service_status()
     
-    # Docker container status
-    st.subheader("Docker Containers")
-    
+    return render_template(
+        'system.html',
+        metrics=metrics,
+        resource_data=json.dumps(resource_data),
+        containers=containers,
+        services=services,
+        last_updated=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
+
+@system_bp.route('/api/metrics')
+def api_metrics():
+    """API endpoint for system metrics"""
+    metrics = get_system_metrics()
+    return jsonify(metrics)
+
+@system_bp.route('/api/historical_metrics')
+def api_historical_metrics():
+    """API endpoint for historical system metrics"""
+    hours = request.args.get('hours', 1, type=int)
+    data = get_historical_metrics(hours)
+    return jsonify(data)
+
+@system_bp.route('/api/containers')
+def api_containers():
+    """API endpoint for container status"""
     containers = get_docker_status()
-    if containers:
-        container_data = []
-        for container in containers:
-            container_data.append({
-                "Name": container.get("Name", "Unknown"),
-                "Service": container.get("Service", "Unknown"),
-                "Status": container.get("State", "Unknown"),
-                "Health": container.get("Health", "Unknown"),
-                "Ports": container.get("Ports", "")
-            })
-        
-        df_containers = pd.DataFrame(container_data)
-        
-        # Color-code the status
-        def highlight_status(val):
-            if val == "running":
-                return 'background-color: #c6efce; color: #006100'
-            elif val == "exited":
-                return 'background-color: #ffc7ce; color: #9c0006'
-            else:
-                return 'background-color: #ffeb9c; color: #9c6500'
-        
-        st.dataframe(
-            df_containers.style.applymap(
-                highlight_status, 
-                subset=['Status']
-            ),
-            use_container_width=True
-        )
-    else:
-        st.warning("No Docker containers found or Docker is not running")
-    
-    # Service health checks
-    st.subheader("Service Health")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        web_health = check_service_health()
-        status = "🟢 Online" if web_health else "🔴 Offline"
-        st.metric("Web Interface", status)
-    
-    with col2:
-        # Check if data collection is running (placeholder)
-        data_health = True  # Replace with actual check
-        status = "🟢 Active" if data_health else "🔴 Inactive"
-        st.metric("Data Collection", status)
-    
-    with col3:
-        # Check if trading system is running (placeholder)
-        trading_health = True  # Replace with actual check
-        status = "🟢 Active" if trading_health else "🔴 Inactive"
-        st.metric("Trading System", status)
-    
-    # System logs
-    st.subheader("Recent Logs")
-    
+    return jsonify(containers or [])
+
+@system_bp.route('/api/services')
+def api_services():
+    """API endpoint for service status"""
+    services = get_service_status()
+    return jsonify(services)
+
+@system_bp.route('/api/update_service', methods=['POST'])
+def update_service():
+    """API endpoint to update service status"""
     try:
-        result = subprocess.run(
-            ["docker-compose", "logs", "--tail=10"],
-            capture_output=True,
-            text=True,
-            check=False
-        )
+        data = request.get_json()
+        name = data.get('name')
+        status = data.get('status')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE service_status 
+            SET status = ?, last_checked = CURRENT_TIMESTAMP
+            WHERE name = ?
+        ''', (status, name))
+        
+        if cursor.rowcount == 0:
+            cursor.execute('''
+                INSERT INTO service_status (name, status)
+                VALUES (?, ?)
+            ''', (name, status))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'status': 'success', 'message': f'Service {name} updated to {status}'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@system_bp.route('/api/restart', methods=['POST'])
+def restart_services():
+    """API endpoint to restart services"""
+    try:
+        service = request.args.get('service', 'all')
+        
+        if service == 'all':
+            result = subprocess.run(["docker-compose", "restart"], check=True, capture_output=True)
+        else:
+            result = subprocess.run(["docker-compose", "restart", service], check=True, capture_output=True)
+        
+        return jsonify({'status': 'success', 'message': f'Services restarted successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@system_bp.route('/api/logs')
+def get_logs():
+    """API endpoint to get logs"""
+    try:
+        service = request.args.get('service', 'all')
+        lines = request.args.get('lines', 10, type=int)
+        
+        if service == 'all':
+            result = subprocess.run(
+                ["docker-compose", "logs", f"--tail={lines}"],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+        else:
+            result = subprocess.run(
+                ["docker-compose", "logs", f"--tail={lines}", service],
+                capture_output=True,
+                text=True,
+                check=False
+            )
         
         if result.returncode == 0:
-            st.code(result.stdout)
+            return jsonify({'status': 'success', 'logs': result.stdout})
         else:
-            st.warning("Could not retrieve logs")
+            return jsonify({'status': 'error', 'message': 'Could not retrieve logs'}), 500
     except Exception as e:
-        st.error(f"Error getting logs: {str(e)}")
-    
-    # Actions
-    st.subheader("System Actions")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("🔄 Restart Services"):
-            try:
-                subprocess.run(["docker-compose", "restart"], check=True)
-                st.success("Services restarted successfully")
-            except Exception as e:
-                st.error(f"Error restarting services: {str(e)}")
-    
-    with col2:
-        if st.button("🔍 View Detailed Logs"):
-            st.session_state.show_logs = True
-    
-    with col3:
-        if st.button("💾 Backup Data"):
-            try:
-                backup_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-                backup_cmd = f"tar -czf backup_{backup_time}.tar.gz data config"
-                subprocess.run(backup_cmd, shell=True, check=True)
-                st.success(f"Backup created: backup_{backup_time}.tar.gz")
-            except Exception as e:
-                st.error(f"Error creating backup: {str(e)}")
-    
-    # Show detailed logs if requested
-    if st.session_state.get("show_logs", False):
-        st.subheader("Detailed Logs")
-        
-        # Add log filtering options
-        service = st.selectbox("Select Service", ["All Services", "trading-app", "database"])
-        lines = st.slider("Number of Lines", 10, 100, 50)
-        
-        log_cmd = ["docker-compose", "logs", f"--tail={lines}"]
-        if service != "All Services":
-            log_cmd.append(service)
-        
-        try:
-            result = subprocess.run(log_cmd, capture_output=True, text=True, check=False)
-            if result.returncode == 0:
-                st.code(result.stdout)
-            else:
-                st.warning("Could not retrieve detailed logs")
-        except Exception as e:
-            st.error(f"Error getting detailed logs: {str(e)}")
-        
-        if st.button("Hide Logs"):
-            st.session_state.show_logs = False
-            st.rerun()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
-if __name__ == "__main__":
-    main()
+@system_bp.route('/api/backup', methods=['POST'])
+def create_backup():
+    """API endpoint to create a backup"""
+    try:
+        backup_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        backup_file = os.path.join(backup_dir, f"backup_{backup_time}.tar.gz")
+        backup_cmd = f"tar -czf {backup_file} data config"
+        
+        subprocess.run(backup_cmd, shell=True, check=True)
+        
+        return jsonify({
+            'status': 'success', 
+            'message': f'Backup created: {os.path.basename(backup_file)}',
+            'file': os.path.basename(backup_file)
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500

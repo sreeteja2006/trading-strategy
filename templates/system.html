@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block title %}System Status Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>System Status Dashboard</h1>
+        <div class="d-flex justify-content-between align-items-center">
+            <p class="text-muted">Last updated: {{ last_updated }}</p>
+            <button id="refreshBtn" class="btn btn-sm btn-primary">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">System Resources</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">CPU Usage</h6>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ metrics.cpu_percent }}%;" aria-valuenow="{{ metrics.cpu_percent }}" aria-valuemin="0" aria-valuemax="100">{{ metrics.cpu_percent }}%</div>
+                                </div>
+                                <p class="card-text">{{ metrics.cpu_percent }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Memory Usage</h6>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ metrics.memory_percent }}%;" aria-valuenow="{{ metrics.memory_percent }}" aria-valuemin="0" aria-valuemax="100">{{ metrics.memory_percent }}%</div>
+                                </div>
+                                <p class="card-text">{{ metrics.memory_percent }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Disk Usage</h6>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ metrics.disk_percent }}%;" aria-valuenow="{{ metrics.disk_percent }}" aria-valuemin="0" aria-valuemax="100">{{ metrics.disk_percent }}%</div>
+                                </div>
+                                <p class="card-text">{{ metrics.disk_percent }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Uptime</h6>
+                                <h3>{{ "%.1f"|format(metrics.uptime_hours) }} hours</h3>
+                                <p class="card-text">
+                                    <small>Since {{ metrics.boot_time }}</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Resource Usage Over Time</h5>
+            </div>
+            <div class="card-body">
+                <div id="resourceChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Docker Containers</h5>
+            </div>
+            <div class="card-body">
+                {% if containers %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Service</th>
+                                <th>Status</th>
+                                <th>Health</th>
+                                <th>Ports</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for container in containers %}
+                            <tr>
+                                <td>{{ container.Name }}</td>
+                                <td>{{ container.Service }}</td>
+                                <td>
+                                    {% if container.State == "running" %}
+                                    <span class="badge bg-success">Running</span>
+                                    {% elif container.State == "exited" %}
+                                    <span class="badge bg-danger">Exited</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">{{ container.State }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if container.Health == "healthy" %}
+                                    <span class="badge bg-success">Healthy</span>
+                                    {% elif container.Health == "unhealthy" %}
+                                    <span class="badge bg-danger">Unhealthy</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ container.Health or 'N/A' }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ container.Ports }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> No Docker containers found or Docker is not running
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Service Health</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Web Interface</h6>
+                                {% if services.web %}
+                                <h3><span class="badge bg-success">🟢 Online</span></h3>
+                                {% else %}
+                                <h3><span class="badge bg-danger">🔴 Offline</span></h3>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Data Collection</h6>
+                                {% if services.data %}
+                                <h3><span class="badge bg-success">🟢 Active</span></h3>
+                                {% else %}
+                                <h3><span class="badge bg-danger">🔴 Inactive</span></h3>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Trading System</h6>
+                                {% if services.trading %}
+                                <h3><span class="badge bg-success">🟢 Active</span></h3>
+                                {% else %}
+                                <h3><span class="badge bg-danger">🔴 Inactive</span></h3>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">System Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <button id="restartBtn" class="btn btn-warning btn-lg w-100">
+                            <i class="bi bi-arrow-clockwise"></i> Restart Services
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button id="logsBtn" class="btn btn-info btn-lg w-100">
+                            <i class="bi bi-file-text"></i> View Detailed Logs
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button id="backupBtn" class="btn btn-success btn-lg w-100">
+                            <i class="bi bi-download"></i> Backup Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="logsSection" class="row mb-4" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Detailed Logs</h5>
+                <button id="hideLogsBtn" class="btn btn-sm btn-secondary">
+                    <i class="bi bi-x-lg"></i> Hide Logs
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="serviceSelect" class="form-label">Select Service</label>
+                            <select id="serviceSelect" class="form-select">
+                                <option value="all">All Services</option>
+                                <option value="trading-app">Trading App</option>
+                                <option value="database">Database</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="linesRange" class="form-label">Number of Lines: <span id="linesValue">50</span></label>
+                            <input type="range" class="form-range" id="linesRange" min="10" max="100" step="10" value="50">
+                        </div>
+                    </div>
+                </div>
+                <pre id="logContent" class="bg-dark text-light p-3" style="max-height: 400px; overflow-y: auto;">Loading logs...</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Create resource usage chart
+        const resourceData = {{ resource_data|safe }};
+        
+        const chartData = [
+            {
+                x: resourceData.timestamps,
+                y: resourceData.cpu,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'CPU Usage %',
+                line: {
+                    color: '#4e73df',
+                    width: 2
+                }
+            },
+            {
+                x: resourceData.timestamps,
+                y: resourceData.memory,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Memory Usage %',
+                line: {
+                    color: '#1cc88a',
+                    width: 2
+                }
+            }
+        ];
+        
+        const layout = {
+            margin: {l: 50, r: 20, t: 20, b: 40},
+            xaxis: {
+                title: 'Time'
+            },
+            yaxis: {
+                title: 'Usage %',
+                range: [0, 100]
+            },
+            legend: {
+                orientation: 'h',
+                y: 1.1
+            }
+        };
+        
+        Plotly.newPlot('resourceChart', chartData, layout);
+        
+        // Refresh button
+        $('#refreshBtn').click(function() {
+            location.reload();
+        });
+        
+        // Restart services button
+        $('#restartBtn').click(function() {
+            if (confirm('Are you sure you want to restart all services?')) {
+                $.ajax({
+                    url: '/system/api/restart',
+                    type: 'POST',
+                    success: function(response) {
+                        alert('Services restarted successfully');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 5000);
+                    },
+                    error: function(xhr) {
+                        alert('Error restarting services: ' + xhr.responseJSON.message);
+                    }
+                });
+            }
+        });
+        
+        // View logs button
+        $('#logsBtn').click(function() {
+            $('#logsSection').show();
+            loadLogs();
+        });
+        
+        // Hide logs button
+        $('#hideLogsBtn').click(function() {
+            $('#logsSection').hide();
+        });
+        
+        // Service select change
+        $('#serviceSelect').change(function() {
+            loadLogs();
+        });
+        
+        // Lines range change
+        $('#linesRange').on('input', function() {
+            $('#linesValue').text($(this).val());
+            loadLogs();
+        });
+        
+        // Backup button
+        $('#backupBtn').click(function() {
+            $.ajax({
+                url: '/system/api/backup',
+                type: 'POST',
+                success: function(response) {
+                    alert('Backup created successfully: ' + response.file);
+                },
+                error: function(xhr) {
+                    alert('Error creating backup: ' + xhr.responseJSON.message);
+                }
+            });
+        });
+        
+        // Function to load logs
+        function loadLogs() {
+            const service = $('#serviceSelect').val();
+            const lines = $('#linesRange').val();
+            
+            $.ajax({
+                url: '/system/api/logs',
+                data: {
+                    service: service,
+                    lines: lines
+                },
+                success: function(response) {
+                    $('#logContent').text(response.logs || 'No logs available');
+                },
+                error: function(xhr) {
+                    $('#logContent').text('Error loading logs: ' + xhr.responseJSON.message);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
