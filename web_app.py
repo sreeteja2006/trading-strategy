@@ -55,7 +55,42 @@ def home():
 @app.route('/dashboard')
 def dashboard():
     """Trading dashboard with charts"""
-    return render_template('dashboard.html')
+    # Get watchlist symbols for the dropdown
+    try:
+        from apps.symbol_manager import get_db_connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT symbol, name FROM watchlist ORDER BY added_date DESC')
+        watchlist_symbols = cursor.fetchall()
+        conn.close()
+        
+        # Convert to list of dictionaries
+        symbols = [{'symbol': row['symbol'], 'name': row['name']} for row in watchlist_symbols]
+        
+        # If no symbols in watchlist, provide default ones
+        if not symbols:
+            symbols = [
+                {'symbol': 'RELIANCE.NS', 'name': 'Reliance Industries'},
+                {'symbol': 'TCS.NS', 'name': 'TCS'},
+                {'symbol': 'INFY.NS', 'name': 'Infosys'},
+                {'symbol': 'HDFCBANK.NS', 'name': 'HDFC Bank'}
+            ]
+    except Exception as e:
+        print(f"Error loading watchlist: {e}")
+        # Fallback to default symbols
+        symbols = [
+            {'symbol': 'RELIANCE.NS', 'name': 'Reliance Industries'},
+            {'symbol': 'TCS.NS', 'name': 'TCS'},
+            {'symbol': 'INFY.NS', 'name': 'Infosys'},
+            {'symbol': 'HDFCBANK.NS', 'name': 'HDFC Bank'}
+        ]
+    
+    # Get the selected symbol from query parameters, or use the first symbol from watchlist
+    selected_symbol = request.args.get('symbol')
+    if not selected_symbol and symbols:
+        selected_symbol = symbols[0]['symbol']
+    
+    return render_template('dashboard.html', symbols=symbols, selected_symbol=selected_symbol)
 
 @app.route('/performance')
 def performance():

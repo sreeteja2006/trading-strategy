@@ -9,10 +9,9 @@
         <div class="d-flex justify-content-between mb-3">
             <div>
                 <select id="stockSymbol" class="form-select">
-                    <option value="RELIANCE.NS">RELIANCE</option>
-                    <option value="TCS.NS">TCS</option>
-                    <option value="INFY.NS">INFOSYS</option>
-                    <option value="HDFCBANK.NS">HDFC BANK</option>
+                    {% for symbol in symbols %}
+                    <option value="{{ symbol.symbol }}" {% if symbol.symbol == selected_symbol %}selected{% endif %}>{{ symbol.name }}</option>
+                    {% endfor %}
                 </select>
             </div>
             <div>
@@ -133,12 +132,16 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
-        // Load initial data
-        loadStockData('RELIANCE.NS');
+        // Load initial data for the selected symbol
+        const selectedSymbol = $('#stockSymbol').val();
+        loadStockData(selectedSymbol);
         
         // Event handlers
         $('#stockSymbol').change(function() {
             loadStockData($(this).val());
+            // Update URL to reflect selected symbol
+            const newUrl = updateUrlParameter(window.location.href, 'symbol', $(this).val());
+            history.pushState(null, '', newUrl);
         });
         
         $('#refreshData').click(function() {
@@ -157,6 +160,36 @@
                 console.error('Error loading stock data:', error);
             }
         });
+    }
+    
+    function updateUrlParameter(url, key, value) {
+        // Remove any hash part
+        const hashParts = url.split('#');
+        let urlWithoutHash = hashParts[0];
+        const hash = hashParts.length > 1 ? '#' + hashParts[1] : '';
+        
+        // Check if the URL already has query parameters
+        const existingParams = urlWithoutHash.split('?');
+        let baseUrl = existingParams[0];
+        let params = existingParams.length > 1 ? existingParams[1].split('&') : [];
+        
+        // Update or add the new parameter
+        let paramFound = false;
+        for (let i = 0; i < params.length; i++) {
+            const param = params[i].split('=');
+            if (param[0] === key) {
+                params[i] = key + '=' + value;
+                paramFound = true;
+                break;
+            }
+        }
+        
+        if (!paramFound) {
+            params.push(key + '=' + value);
+        }
+        
+        // Reconstruct the URL
+        return baseUrl + (params.length > 0 ? '?' + params.join('&') : '') + hash;
     }
     
     function updateDashboard(data) {
