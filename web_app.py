@@ -162,10 +162,19 @@ def get_stock_data(symbol):
     try:
         print(f"Fetching real data for symbol: {symbol}")
         
-        # Handle NSE symbols differently - they require the '.NS' suffix
-        if symbol.endswith('.NS') or symbol.endswith('.BO'):
-            # Keep the suffix for Indian stocks
-            clean_symbol = symbol
+        # Handle Indian stocks with .NS suffix
+        if symbol.endswith('.NS'):
+            # For Indian stocks, we need to use the Yahoo Finance format without the exchange suffix
+            clean_symbol = symbol.split('.')[0] + ".NS"
+            # Special handling for known Indian stocks
+            if clean_symbol == "RELIANCE.NS":
+                clean_symbol = "RELIANCE.NS"
+            elif clean_symbol == "TCS.NS":
+                clean_symbol = "TCS.NS"
+            elif clean_symbol == "INFY.NS":
+                clean_symbol = "INFY.NS"
+            elif clean_symbol == "HDFCBANK.NS":
+                clean_symbol = "HDFCBANK.NS"
         else:
             # For other stocks, remove any exchange suffixes
             clean_symbol = symbol.split('.')[0]
@@ -173,53 +182,78 @@ def get_stock_data(symbol):
         # Get the ticker object
         ticker = yf.Ticker(clean_symbol)
         
-        # Try different periods
-        periods_to_try = ["1mo", "3mo", "6mo", "1y", "2y"]
-        data = None
-        
-        for period in periods_to_try:
+        # Try to fetch data with a 1-month period first
+        try:
+            data = yf.download(
+                clean_symbol, 
+                period="1mo",
+                progress=False
+            )
+            if data.empty:
+                raise ValueError("Empty data returned")
+        except:
+            # If 1mo fails, try 3mo
             try:
-                # Use download instead of history for more reliable data
                 data = yf.download(
                     clean_symbol, 
-                    period=period,
-                    progress=False,
-                    # For Indian stocks, we need to specify the exchange
-                    session=session if clean_symbol.endswith('.NS') else None
+                    period="3mo",
+                    progress=False
                 )
-                if not data.empty:
-                    print(f"Successfully fetched data for {clean_symbol} with period {period}")
-                    break
-            except Exception as period_error:
-                print(f"Failed to fetch data for {clean_symbol} with period {period}: {str(period_error)}")
-                continue
+                if data.empty:
+                    raise ValueError("Empty data returned")
+            except:
+                # If 3mo fails, try 6mo
+                try:
+                    data = yf.download(
+                        clean_symbol, 
+                        period="6mo",
+                        progress=False
+                    )
+                    if data.empty:
+                        raise ValueError("Empty data returned")
+                except:
+                    # Final fallback to 1y
+                    data = yf.download(
+                        clean_symbol, 
+                        period="1y",
+                        progress=False
+                    )
         
-        if data is None or data.empty:
+        if data.empty:
             return jsonify({
-                'error': f'No data available for {clean_symbol}. '
+                'error': f'No data available for {symbol}. '
                          f'Please check the symbol or try a different one.'
             })
         
         # Ensure we have at least 2 days of data for change calculation
         if len(data) < 2:
             return jsonify({
-                'error': f'Insufficient data for {clean_symbol} '
+                'error': f'Insufficient data for {symbol} '
                          f'(only {len(data)} days available)'
             })
         
         # Get current quote for accurate pricing
         try:
+            # First try to get real-time data
             current_info = ticker.fast_info
             current_price = current_info.last_price
+            
+            # If real-time price is not available, use the last close
+            if current_price is None:
+                current_price = data['Close'].iloc[-1]
+            
+            # Try to get previous close
             prev_close = current_info.previous_close
-            change = current_price - prev_close
-            change_pct = (change / prev_close) * 100
+            if prev_close is None:
+                prev_close = data['Close'].iloc[-2]
         except:
             # Fallback to historical data if real-time fails
             current_price = data['Close'].iloc[-1]
             prev_close = data['Close'].iloc[-2]
-            change = current_price - prev_close
-            change_pct = (change / prev_close) * 100
+        
+        # Calculate change
+        change = current_price - prev_close
+        change_pct = (change / prev_close) * 100
         
         # Convert to JSON format
         chart_data = {
@@ -241,6 +275,7 @@ def get_stock_data(symbol):
         error_msg = f"Error fetching data for {symbol}: {str(e)}"
         print(error_msg)
         return jsonify({'error': error_msg})
+
 @app.route('/api/portfolio')
 def get_portfolio():
     """API endpoint to get portfolio data"""
